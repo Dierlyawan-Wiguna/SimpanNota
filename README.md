@@ -33,5 +33,5 @@ Masyarakat sering gagal melakukan klaim garansi karena struk fisik/kartu garansi
 * **Notifikasi:** Sistem pengingat waktu garansi berfungsi memberikan notifikasi lokal di perangkat secara tepat.
 
 ### Project Simpan Nota
-### Nama: Dierlyawan Wiguna
-### NIM: 2410101013
+* **Nama:** Dierlyawan Wiguna
+* **NIM:** 2410101013
