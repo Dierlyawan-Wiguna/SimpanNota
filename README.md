@@ -8,7 +8,7 @@ Aplikasi mobile universal untuk menyimpan struk belanja fisik, melacak tanggal k
 Masyarakat sering gagal melakukan klaim garansi karena struk fisik/kartu garansi kertas hilang, rusak, atau tintanya memudar seiring waktu. Tidak ada wadah penyimpanan digital sederhana khusus untuk mendata inventaris barang bergaransi beserta tanggal kedaluwarsanya.
 
 ### 2. Profil Target Pengguna
-* **Primer:** Masyarakat umum, pekerja kantoran, dan kepala keluarga (usia 22–50 tahun).
+* **Primer:** Masyarakat umum, pekerja kantoran, dan kepala keluarga (usia 22–60 tahun).
 * **Karakteristik:** Memiliki ponsel pintar, sering kerepotan menyimpan kertas nota belanja kecil, dan ingin mengamankan hak klaim garansi produk.
 
 ### 3. Manfaat Aplikasi
