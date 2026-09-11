@@ -31,3 +31,7 @@ Masyarakat sering gagal melakukan klaim garansi karena struk fisik/kartu garansi
 * **Fungsional:** Pengguna berhasil mengambil foto nota, mengisi data garansi, dan menyimpannya tanpa eror.
 * **Navigasi:** Pengguna dapat mencari barang berdasarkan kategori dalam waktu kurang dari 5 detik.
 * **Notifikasi:** Sistem pengingat waktu garansi berfungsi memberikan notifikasi lokal di perangkat secara tepat.
+
+Project Simpan Nota
+Nama: Dierlyawan Wiguna
+NIM: 2410101013
