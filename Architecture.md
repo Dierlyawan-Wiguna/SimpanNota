@@ -77,6 +77,14 @@ Help individual users, office workers, and household managers easily secure purc
 
 ---
 
+## Backend Rules (Supabase & BaaS Logic)
+* **Row-Level Security (RLS) Enforcement:** Seluruh tabel database wajib mengaktifkan RLS; kueri SELECT, INSERT, UPDATE, dan DELETE hanya diizinkan jika `auth.uid() = user_id`.
+* **Automatic Audit Fields:** Kolom `id` digenerate otomatis menggunakan `gen_random_uuid()`, `user_id` otomatis terisi dari token sesi aktif via `auth.uid()`, dan `created_at` otomatis terisi `now()`.
+* **Data Isolation:** User tidak diizinkan membaca, mengubah, atau menghapus berkas dan entri nota milik pengguna lain dalam kondisi apa pun.
+* **Storage Cascading Policy:** Penghapusan entri data nota pada tabel database wajib diiringi penghapusan berkas fisik gambar terkait di Supabase Storage bucket `receipts`.
+* **File Storage Constraints:** Berkas unggahan dibatasi hanya format gambar (.jpg, .jpeg, .png) dengan penamaan berkas unik berbasis UUID/timestamp untuk mencegah penimpaan file (overwrite).
+* **Stateless Client Interaction:** Backend tidak menyimpan status sesi di sisi server; seluruh autentikasi mengandalkan JWT yang divalidasi langsung oleh Supabase Auth Gateway.
+
 ## Application Features
 
 ### 1. Authentication (Supabase Auth)
