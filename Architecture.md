@@ -30,6 +30,8 @@ Help individual users, office workers, and household managers easily secure purc
 
 ---
 
+## Main Entities & Mapping
+
 ### 1. User (Supabase Auth Entity)
 * Mapping:
   * Dart: `id` (String), `email` (String), `createdAt` (DateTime)
@@ -43,33 +45,33 @@ Valid stored categories:
 * `perabotan` (Perabotan)
 * `lainnya` (Lainnya)
 
-*(Catatan: Opsi "Semua" murni filter antarmuka UI dan DILARANG disimpan ke kolom `category` database).*
+*(Note: The "Semua" option is purely a UI filter state and must NEVER be stored in the database `category` column).*
 
 ### 3. WarrantyStatus (Computed / Virtual Domain Enum)
-Status garansi **tidak disimpan statis di database**, melainkan dihitung otomatis (*computed property*) di sisi aplikasi dari `tanggalBeli + durasiGaransiBulan`:
-* `ACTIVE`: Sisa masa garansi > 7 hari (Badge Hijau `#2E7D32`).
-* `EXPIRING_SOON`: Sisa masa garansi antara 1 sampai 7 hari (Badge Oranye `#ED6C02`).
-* `EXPIRED`: Tanggal sekarang sudah melewati masa garansi (Badge Abu-abu/Merah `#D32F2F`).
+Warranty status is **not stored statically in the database**. It is dynamically computed on the client side from `tanggalBeli + durasiGaransiBulan`:
+* `ACTIVE`: Remaining warranty period > 7 days (Green Badge `#2E7D32`).
+* `EXPIRING_SOON`: Remaining warranty period between 1 and 7 days (Orange Badge `#ED6C02`).
+* `EXPIRED`: Current date has passed the warranty end date (Grey/Red Badge `#D32F2F`).
 
-### 4. Receipt (Nota Belanja & Garansi)
-Mapping kolom database ke properti Dart:
+### 4. Receipt
+Database column to Dart property mapping:
 
-| Field Dart (`camelCase`) | Kolom Postgres (`snake_case`) | Tipe Data Postgres | Batasan & Validasi |
+| Dart Field (`camelCase`) | Postgres Column (`snake_case`) | Postgres Data Type | Constraints & Validations |
 | :--- | :--- | :--- | :--- |
 | `id` | `id` | `UUID` | Primary Key, `default gen_random_uuid()` |
 | `userId` | `user_id` | `UUID` | Foreign Key `auth.users(id)` **ON DELETE CASCADE** |
-| `namaBarang` | `nama_barang` | `TEXT` | NOT NULL, min 1 karakter |
-| `namaToko` | `nama_toko` | `TEXT` | NOT NULL, min 1 karakter |
-| `tanggalBeli` | `tanggal_beli` | `DATE` | NOT NULL, tidak boleh melebihi tanggal hari ini |
+| `namaBarang` | `nama_barang` | `TEXT` | NOT NULL, min 1 character |
+| `namaToko` | `nama_toko` | `TEXT` | NOT NULL, min 1 character |
+| `tanggalBeli` | `tanggal_beli` | `DATE` | NOT NULL, cannot exceed current date |
 | `durasiGaransiBulan`| `durasi_garansi_bulan`| `INTEGER` | NOT NULL, **CHECK (durasi_garansi_bulan > 0)** |
-| `fotoPath` | `foto_path` | `TEXT` | Relatif path di bucket privat (misal: `{user_id}/{uuid}.jpg`) |
+| `fotoPath` | `foto_path` | `TEXT` | Relative path in private bucket (e.g., `{user_id}/{uuid}.jpg`) |
 | `kategori` | `kategori` | `TEXT` | NOT NULL, CHECK IN ('elektronik', 'kendaraan', 'pakaian', 'perabotan', 'lainnya') |
 | `createdAt` | `created_at` | `TIMESTAMPTZ` | NOT NULL, `default now()` |
 
 ---
 
 ## Database Rules & Security (Supabase PostgreSQL)
-### 1. Skema Tabel & Constraint
+### 1. Table Schema & Constraints
 ```sql
 create table receipts (
   id uuid default gen_random_uuid() primary key,
@@ -83,7 +85,7 @@ create table receipts (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- RLS Receipts Table
+-- Enable RLS on receipts table
 alter table receipts enable row level security;
 
 create policy "Users can view and manage their own receipts"
@@ -92,42 +94,44 @@ using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 ```
 
-### 2. Aturan Relasi User & Lifecycle
-* Menggunakan **`ON DELETE CASCADE`**: Jika akun pengguna dihapus dari `auth.users`, seluruh entri nota miliknya di tabel `receipts` akan terhapus otomatis dari database.
+### 2. User Lifecycle & Relationship Rules
+* Configured with **`ON DELETE CASCADE`**: When a user account is deleted from `auth.users`, all corresponding receipt records in the `receipts` table are automatically deleted.
 
-### 3. Aturan Penyimpanan Berkas Privat (Storage Security)
-* Bucket `receipts` disetel sebagai **PRIVATE** (Public access dimatikan).
-* Berkas disimpan dalam format isolasi path per user: `${user_id}/${receipt_id}.jpg`.
-* Kebijakan RLS Storage pada `storage.objects`:
+### 3. Private File Storage Rules (Storage Security)
+* Bucket `receipts` is set to **PRIVATE** (public access disabled).
+* Files are isolated per user directory: `${user_id}/${receipt_id}.jpg`.
+* Storage RLS policy on `storage.objects`:
   ```sql
   create policy "Users can access their own receipt photos"
   on storage.objects for all
   using (bucket_id = 'receipts' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'receipts' and auth.uid()::text = (storage.foldername(name))[1]);
   ```
-* Aplikasi Flutter memuat foto nota menggunakan **Signed URL** sementara (`createSignedUrl(fotoPath, 3600)`) yang memiliki batas kedaluwarsa 60 menit.
+* The Flutter application renders receipt photos using temporary **Signed URLs** (`createSignedUrl(fotoPath, 3600)`) with a 60-minute expiration lifespan.
 
 ---
 
 ## Backend Rules (Supabase & BaaS Logic)
-* **Row-Level Security (RLS) Enforcement:** Seluruh query SELECT, INSERT, UPDATE, dan DELETE pada tabel maupun bucket storage wajib divalidasi via RLS berdasarkan token JWT `auth.uid()`.
-* **Zero Leakage:** URL gambar publik dilarang keras. Pengambilan gambar harus melewati token autentikasi atau signed URL.
-* **Storage Cascading Policy:** Jika sebuah nota dihapus lewat aplikasi, berkas gambar fisiknya pada Supabase Storage wajib ikut dihapus (`storage.from('receipts').remove([fotoPath])`).
-* **Input Validation Enforcement:** Durasi garansi wajib diverifikasi bernilai $\ge 1$ bulan baik pada validasi form antarmuka maupun *CHECK constraint* di database.
+* **Row-Level Security (RLS) Enforcement:** All SELECT, INSERT, UPDATE, and DELETE operations on tables and storage buckets must be authenticated and validated against `auth.uid()`.
+* **Zero Leakage:** Public asset URLs are strictly prohibited. Image retrieval must always require valid auth sessions or signed URLs.
+* **Storage Cascading Policy:** When a receipt record is deleted, its associated physical image in Supabase Storage must also be removed (`storage.from('receipts').remove([fotoPath])`).
+* **Input Validation Enforcement:** Warranty duration must be strictly validated to be $\ge 1$ month across both client-side form logic and database CHECK constraints.
 
 ---
 
 ## Frontend Pages
 
 ### 1. Auth Screen (Login & Register)
-* Berisi toggle antara Login dan Register menggunakan Email & Password.
-* Validasi email baku dan password minimal 6 karakter.
-* `AuthGate` memantau status sesi Supabase dan mengarahkan ke `HomeScreen` jika login valid.
+* Single screen with a toggle between Login and Register tabs using Email and Password.
+* Client-side validation: standard email pattern and password minimum length of 6 characters.
+* `AuthGate` listens to Supabase auth state stream:
+  * Redirects authenticated sessions directly to `HomeScreen`.
+  * Redirects unauthenticated / logged-out sessions to `AuthScreen`.
 
 ### 2. Home Screen (Dashboard & Search)
-* Filter Chips: `Semua` (pilihan UI untuk reset filter), `Elektronik`, `Kendaraan`, `Pakaian`, `Perabotan`, `Lainnya`.
-* Search bar reaktif untuk menyaring `namaBarang` dan `namaToko`.
-* Komponen `ReceiptCard` menghitung status garansi secara dinamis via *getter* model Dart:
+* Interactive horizontal category filter chips: `Semua` (clears filter), `Elektronik`, `Kendaraan`, `Pakaian`, `Perabotan`, `Lainnya`.
+* Real-time reactive search bar filtering by `namaBarang` or `namaToko`.
+* `ReceiptCard` dynamically computes warranty status via Dart model getters:
   ```dart
   DateTime get tanggalKedaluwarsa => tanggalBeli.add(Duration(days: durasiGaransiBulan * 30));
   int get sisaHari => tanggalKedaluwarsa.difference(DateTime.now()).inDays;
@@ -137,52 +141,55 @@ with check (auth.uid() = user_id);
     return WarrantyStatus.active;
   }
   ```
-* Pull-to-refresh untuk menyinkronkan data dengan Supabase.
+* Pull-to-refresh (`RefreshIndicator`) to reload data from Supabase.
+* Floating Action Button (FAB) navigating to `AddReceiptScreen`.
+* Sign-out button located in the AppBar.
 
 ### 3. Add & Edit Receipt Screen
-* Form input:
-  * Nama Barang & Nama Toko (Validasi wajib isi).
-  * Kategori (Dropdown pilihan kategori sah, tanpa opsi "Semua").
-  * Tanggal Beli (`showDatePicker`, maksimal tanggal hari ini).
-  * Durasi Garansi (Input integer > 0 dengan opsi cepat: 6, 12, 24 bulan).
-* Integrasi Kamera & Galeri: Upload file gambar ke bucket privat dan simpan `fotoPath` relatifnya.
-* Mode Edit: Form yang sama dapat digunakan untuk memperbarui data nota lama.
+* Form inputs:
+  * Product Name & Store Name (required validation).
+  * Category (Dropdown menu containing valid categories, excluding "Semua").
+  * Purchase Date (`showDatePicker`, capped at current date).
+  * Warranty Duration (positive integer input with quick-select shortcuts: 6, 12, 24 months).
+* Camera & Gallery integration: uploads chosen image to private bucket and records relative `fotoPath`.
+* Reusable for Edit mode: pre-populates fields to update existing records.
 
 ### 4. Receipt Detail Screen
-* Menampilkan informasi rincian lengkap nota, sisa hari, dan status garansi aktif.
-* Foto nota diambil menggunakan *Signed URL* dan ditampilkan dengan `InteractiveViewer` untuk fitur zoom.
-* Aksi tombol Hapus: Konfirmasi dialog -> hapus notifikasi lokal -> hapus berkas gambar di Storage -> hapus baris data di PostgreSQL.
+* Displays complete product details, remaining days, and active warranty status.
+* Displays receipt image fetched via temporary Signed URL inside an `InteractiveViewer` for pinch-to-zoom support.
+* Delete action flow: confirmation dialog -> cancel local notifications -> remove storage image -> delete database row.
 ---
 
 ## Local Notification System
-* Service class mengelola `flutter_local_notifications` dan zona waktu `timezone`.
-* Aturan Penjadwalan Unik: Gunakan integer hash berbasis `receipt.id` untuk ID notifikasi (contoh: `id.hashCode` untuk H-7, dan `id.hashCode + 1` untuk H-1).
-* **Aturan Reschedule (Edit Data):**
-  * Ketika pengguna mengubah `tanggalBeli` atau `durasiGaransiBulan`, sistem wajib membatalkan (*cancel*) ID notifikasi lama terlebih dahulu.
-  * Menghitung ulang tanggal kedaluwarsa baru, lalu menjadwalkan ulang (*reschedule*) notifikasi lokal H-7 dan H-1.
-* **Aturan Pembatalan (Hapus Data):**
-  * Ketika nota dihapus, sistem langsung memanggil `cancel(id.hashCode)` dan `cancel(id.hashCode + 1)`.
-* Notifikasi tidak akan dijadwalkan jika tanggal target (H-7 / H-1) sudah berada di masa lampau.
+## Local Notification System (Scheduling & Rescheduling Rules)
+* Service class managing `flutter_local_notifications` and `timezone`.
+* Unique Notification ID convention: uses deterministic integer hashing from `receipt.id` (e.g., `id.hashCode` for H-7 notification, and `id.hashCode + 1` for H-1 notification).
+* **Rescheduling Rules (On Edit):**
+  * When a user updates `tanggalBeli` or `durasiGaransiBulan`, the system must cancel existing notification IDs first.
+  * Recompute expiration date and schedule new H-7 and H-1 local alerts.
+* **Cancellation Rules (On Delete):**
+  * When a receipt is deleted, the system immediately invokes `cancel(id.hashCode)` and `cancel(id.hashCode + 1)`.
+* Notifications must not be scheduled if the target reminder date has already passed.
 
 ---
 
 ## UI Requirements
-* Mengikuti pedoman Material Design 3.
-* Palet warna utama: Deep Navy / Teal dengan permukaan kartu bernuansa netral.
-* Aturan warna badge status garansi:
-  * **Aktif (Active):** Hijau (`#2E7D32`)
-  * **Hampir Habis (Expiring Soon <= 7 Hari):** Oranye (`#ED6C02`)
-  * **Kedaluwarsa (Expired):** Abu-abu / Merah (`#D32F2F`)
-* Lokalisasi antarmuka bahasa Indonesia untuk seluruh tombol, input, peringatan, dan label navigasi.
+* Follow Material Design 3 guidelines.
+* Primary theme colors: Deep Navy / Teal with neutral card surfaces.
+* Warranty status badge colors:
+  * **Active (Aktif):** Green (`#2E7D32`)
+  * **Expiring Soon (Hampir Habis <= 7 Days):** Orange (`#ED6C02`)
+  * **Expired (Kedaluwarsa):** Grey / Red (`#D32F2F`)
+* Indonesian language localization for all user-facing labels, buttons, dialogs, and validation error messages.
 
 ---
 
 ## Deliverables
-* Berkas kode sumber Flutter lengkap dengan integrasi Flutter Riverpod.
-* Skrip migrasi SQL Supabase (Tabel, RLS Policies, Storage bucket permissions).
-* Berkas `.env.example` untuk `SUPABASE_URL` dan `SUPABASE_ANON_KEY`.
-* Berkas rilis APK (`SimpanNota-v1.0.0-Release.apk`) pada milestone Minggu ke-8.
-* Lembar pengujian UAT dan laporan berkala mingguan.
+* Complete Flutter source code structured with Flutter Riverpod.
+* Supabase SQL migration script covering tables, RLS policies, and private storage bucket permissions.
+* `.env.example` containing `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+* Release APK binary (`SimpanNota-v1.0.0-Release.apk`) targeting the Week 8 deployment milestone.
+* User Acceptance Testing (UAT) report and weekly project progress logs.
   
 ---
 
@@ -212,6 +219,9 @@ simpan_nota/
           category.dart
           warranty_status.dart
           receipt_model.dart
+        dto/
+          receipt_filter_dto.dart
+          notification_payload_dto.dart
         presentation/
           controllers/receipt_controller.dart
           screens/
@@ -228,12 +238,13 @@ simpan_nota/
   pubspec.yaml
   README.md
 ```
+
 ---
 
 ## Core Shared Package & Module Requirements
-* Seluruh model domain, enumerasi, dan kontrak transfer data ditempatkan pada modul bersama di bawah `lib/core/` dan `lib/features/receipts/domain/`.
-* Modul UI (Screens & Widgets) dilarang memanipulasi *payload* mentah Map/JSON dari Supabase secara langsung; seluruh data wajib dipetakan melalui model entitas bersama.
-* Hindari duplikasi definisi properti antara lapisan servis (*service layer*), pengelola *state* (Riverpod), dan tampilan antarmuka.
+* All domain entities, enums, and data transfer contracts must reside under shared module paths: `lib/core/` and `lib/features/receipts/domain/`.
+* UI modules (Screens & Widgets) are strictly forbidden from parsing raw Map/JSON responses directly from Supabase; all data must flow through shared domain models.
+* Prevent duplicate property definitions between the service layer, Riverpod state notifiers, and presentation widgets.
 
 ## Example Shared Files
 ```text
@@ -256,12 +267,12 @@ lib/
 ---
 
 ## Model Rules
-* Definisikan entitas Dart (`ReceiptModel`, `WarrantyStatus`, `Category`) hanya satu kali pada lokasi domain yang telah ditentukan.
-* Model `ReceiptModel` bertindak sebagai representasi data tunggal yang digunakan bersama oleh antarmuka pengguna (`HomeScreen`, `AddReceiptScreen`, `ReceiptDetailScreen`) dan servis data (`ReceiptService`).
-* Serialisasi database:
-  * Pemetaan dari kueri PostgreSQL Supabase ke objek Dart dilakukan melalui metode pabrik `ReceiptModel.fromMap(Map<String, dynamic> map)` (konversi `snake_case` Postgres ke `camelCase` Dart).
-  * Konversi objek Dart ke format *payload* Supabase dilakukan melalui metode `ReceiptModel.toMap()` (mengembalikan format `snake_case`).
-* Komponen widget tampilan murni menerima objek model yang bersifat *immutable*, bukan kueri langsung dari database.
-* Status garansi (`WarrantyStatus`) merupakan *computed property* murni di sisi client, bukan kolom yang diparsing dari database.
+* Define Dart entities (`ReceiptModel`, `WarrantyStatus`, `Category`) only once within their assigned domain directories.
+* `ReceiptModel` serves as the single source of truth across UI screens (`HomeScreen`, `AddReceiptScreen`, `ReceiptDetailScreen`) and backend services (`ReceiptService`).
+* Database serialization:
+  * PostgreSQL response to Dart object: `ReceiptModel.fromMap(Map<String, dynamic> map)` handles `snake_case` to `camelCase` mapping.
+  * Dart object to Supabase payload: `ReceiptModel.toMap()` outputs a `Map<String, dynamic>` using `snake_case` keys.
+* Presentation widgets must consume immutable model instances rather than direct query results.
+* `WarrantyStatus` is purely a computed client-side property, never parsed as a static database column.
 
 ---
