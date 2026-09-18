@@ -85,6 +85,8 @@ Help individual users, office workers, and household managers easily secure purc
 * **File Storage Constraints:** Berkas unggahan dibatasi hanya format gambar (.jpg, .jpeg, .png) dengan penamaan berkas unik berbasis UUID/timestamp untuk mencegah penimpaan file (overwrite).
 * **Stateless Client Interaction:** Backend tidak menyimpan status sesi di sisi server; seluruh autentikasi mengandalkan JWT yang divalidasi langsung oleh Supabase Auth Gateway.
 
+---
+
 ## Application Features
 
 ### 1. Authentication (Supabase Auth)
@@ -94,7 +96,18 @@ Help individual users, office workers, and household managers easily secure purc
   * Redirects unauthenticated / logged-out sessions to `AuthScreen`.
 * Sign-out trigger in the main AppBar.
 
-### 2. Dashboard & Search (Home Screen)
+---
+
+## Frontend Pages
+
+### 1. Auth Screen (Login & Register)
+* Single screen with toggle/tab between Login and Register.
+* Form inputs: Email and Password with inline validation.
+* Auth state gate (`AuthGate`) listening to `onAuthStateChange` stream:
+  * Redirects authenticated sessions directly to `HomeScreen`.
+  * Redirects unauthenticated / logged-out sessions to `AuthScreen`.
+
+### 2. Home Screen (Dashboard & Search)
 * Category filtering using interactive horizontal choice chips (`Semua`, `Elektronik`, `Kendaraan`, `Pakaian`, `Perabotan`, `Lainnya`).
 * Real-time search bar filtering receipts by `NamaBarang` or `NamaToko`.
 * Calculated warranty status display on receipt cards:
@@ -102,6 +115,23 @@ Help individual users, office workers, and household managers easily secure purc
   * Computes remaining days and applies color badge (`Aktif`, `Hampir Habis`, `Kedaluwarsa`).
 * Empty state feedback when no receipts match the active filter or when the database is empty.
 * Pull-to-refresh (`RefreshIndicator`) to sync data with Supabase.
+* Floating Action Button (FAB) navigating to `AddReceiptScreen`.
+* Sign-out trigger in the main AppBar.
+
+### 3. Add Receipt Screen
+* Form inputs: Nama Barang, Nama Toko, Kategori (Dropdown), Tanggal Beli (`showDatePicker`), and Durasi Garansi (in months, with quick-select options like 6, 12, 24 months).
+* Strict validation preventing empty submissions.
+* Camera & Gallery picker via `image_picker`.
+* Image preview box and upload handler sending compressed image files to the Supabase `receipts` storage bucket.
+* Strictly manual entry (no automatic OCR).
+
+### 4. Receipt Detail Screen
+* Full receipt detail view displaying metadata, days remaining, and expiration dates.
+* Interactive zoomable receipt photo preview using `InteractiveViewer`.
+* Edit button navigating to update form.
+* Delete confirmation dialog before permanently removing database rows and storage files.
+
+---
 
 ### 3. Manual Receipt Recording (Add Receipt Screen)
 * Form inputs: Nama Barang, Nama Toko, Kategori (Dropdown), Tanggal Beli (`showDatePicker`), and Durasi Garansi (in months, with quick-select options like 6, 12, 24 months).
@@ -163,6 +193,40 @@ simpan_nota/
   pubspec.yaml
   README.md
 ```
+
+---
+
+## Core Shared Package & Module Requirements
+* Seluruh model domain, enumerasi, dan kontrak transfer data ditempatkan pada modul bersama di bawah `lib/core/` dan `lib/features/receipts/models/`.
+* Modul UI (Screens & Widgets) dilarang memanipulasi *payload* mentah Map/JSON dari Supabase secara langsung; seluruh data wajib dipetakan melalui model entitas bersama.
+* Hindari duplikasi definisi properti antara lapisan servis (*service layer*), penyedia *state*, dan tampilan antarmuka.
+
+## Example Shared Files
+```text
+lib/
+  core/
+    constants/
+      app_constants.dart
+      supabase_constants.dart
+  features/
+    receipts/
+      enums/
+        category.dart
+        warranty_status.dart
+      models/
+        receipt_model.dart
+      dto/
+        receipt_filter_dto.dart
+        notification_payload_dto.dart
+```
+
+## Model Rules
+* Definisikan entitas Dart (`ReceiptModel`, `WarrantyStatus`) hanya satu kali pada lokasi model yang telah ditentukan.
+* Model `ReceiptModel` bertindak sebagai representasi data tunggal yang digunakan bersama oleh antarmuka pengguna (`HomeScreen`, `AddReceiptScreen`, `ReceiptDetailScreen`) dan servis data (`ReceiptService`).
+* Serialisasi database:
+  * Pemetaan dari kueri PostgreSQL Supabase ke objek Dart dilakukan melalui metode pabrik `ReceiptModel.fromMap(Map<String, dynamic> json)`.
+  * Konversi objek Dart ke format *payload* Supabase dilakukan melalui metode `ReceiptModel.toMap()`.
+* Komponen widget tampilan murni menerima objek model yang bersifat *immutable*, bukan kueri langsung dari database.
 
 ---
 
