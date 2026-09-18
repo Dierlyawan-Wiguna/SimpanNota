@@ -7,10 +7,11 @@ Help individual users, office workers, and household managers easily secure purc
 
 ## Tech Stack
 * **Client / Mobile Framework:** Flutter (Dart)
+* **State Management:** Flutter Riverpod (`flutter_riverpod`)
 * **Backend-as-a-Service (BaaS):** Supabase
   * **Authentication:** Supabase Auth (Email & Password)
   * **Database:** PostgreSQL with Row Level Security (RLS)
-  * **File Storage:** Supabase Storage (Bucket: `receipts`)
+  * **File Storage:** Supabase Storage (Private Bucket: `receipts` via Signed URLs)
 * **Local Notifications:** `flutter_local_notifications` + `timezone`
 * **Hardware Integration:** `image_picker` (Camera & Gallery)
 * **Design System:** Material Design 3 (Indonesian UI localization)
@@ -18,137 +19,170 @@ Help individual users, office workers, and household managers easily secure purc
 ## Code & Architecture Rules
 * Keep application architecture modular using a feature-first approach (`core`, `features/auth`, `features/receipts`).
 * Strictly enforce manual input for product data and purchase dates. **Do not implement OCR (Optical Character Recognition) automatic scanning.**
-* Enforce Supabase Row Level Security (RLS) so users can strictly create, view, update, and delete only their own records.
-* Use PascalCase for Classes, Models, Enums, and Flutter Widgets.
-* Use camelCase for methods, variables, parameters, and database column mappings in Dart models.
-* Use snake_case for PostgreSQL database tables and columns in Supabase.
-* Keep UI presentation cleanly separated from service/data layer logic.
+* Enforce Supabase Row Level Security (RLS) on database tables and Storage Objects so users can strictly access only their own records and photos.
+* **Naming Conventions:**
+  * **PostgreSQL:** Use `snake_case` for tables, columns, and foreign keys.
+  * **Dart Models & Services:** Use `camelCase` for variables, properties, getters, and methods.
+  * **Classes, Enums & Widgets:** Use `PascalCase` across the entire codebase.
+* Storage Bucket `receipts` must be **Private**. Do NOT expose public image URLs. Client apps must request short-lived Signed URLs for rendering photos.
+* Keep UI presentation cleanly separated from data layers using Riverpod Providers/Notifiers.
 * Keep UI messages, validation prompts, labels, and dialogs in **Indonesian language**.
 
 ---
 
-## Main Entities
-
 ### 1. User (Supabase Auth Entity)
-* `Id` (UUID, Primary Key)
-* `Email` (String)
-* `CreatedAt` (Timestamp with Timezone)
+* Mapping:
+  * Dart: `id` (String), `email` (String), `createdAt` (DateTime)
+  * PostgreSQL (`auth.users`): `id` (uuid), `email` (varchar), `created_at` (timestamptz)
 
 ### 2. Category (Domain Enum)
-* `Semua`
-* `Elektronik`
-* `Kendaraan`
-* `Pakaian`
-* `Perabotan`
-* `Lainnya`
+Valid stored categories:
+* `elektronik` (Elektronik)
+* `kendaraan` (Kendaraan)
+* `pakaian` (Pakaian)
+* `perabotan` (Perabotan)
+* `lainnya` (Lainnya)
 
-### 3. WarrantyStatus (Domain Enum)
-* `ACTIVE` (Active warranty, remaining time > 7 days) - Green badge
-* `EXPIRING_SOON` (Remaining warranty <= 7 days) - Orange badge
-* `EXPIRED` (Warranty period ended) - Red / Grey badge
+*(Catatan: Opsi "Semua" murni filter antarmuka UI dan DILARANG disimpan ke kolom `category` database).*
 
-### 4. Receipt
-* `Id` (UUID, Primary Key)
-* `UserId` (UUID, Foreign Key referencing `auth.users.id`)
-* `NamaBarang` (String, required)
-* `NamaToko` (String, required)
-* `TanggalBeli` (Date, required)
-* `DurasiGaransiBulan` (Integer, required)
-* `FotoUrl` (String, optional public URL from Supabase Storage)
-* `Kategori` (String, required)
-* `CreatedAt` (Timestamp with Timezone, default `now()`)
+### 3. WarrantyStatus (Computed / Virtual Domain Enum)
+Status garansi **tidak disimpan statis di database**, melainkan dihitung otomatis (*computed property*) di sisi aplikasi dari `tanggalBeli + durasiGaransiBulan`:
+* `ACTIVE`: Sisa masa garansi > 7 hari (Badge Hijau `#2E7D32`).
+* `EXPIRING_SOON`: Sisa masa garansi antara 1 sampai 7 hari (Badge Oranye `#ED6C02`).
+* `EXPIRED`: Tanggal sekarang sudah melewati masa garansi (Badge Abu-abu/Merah `#D32F2F`).
+
+### 4. Receipt (Nota Belanja & Garansi)
+Mapping kolom database ke properti Dart:
+
+| Field Dart (`camelCase`) | Kolom Postgres (`snake_case`) | Tipe Data Postgres | Batasan & Validasi |
+| :--- | :--- | :--- | :--- |
+| `id` | `id` | `UUID` | Primary Key, `default gen_random_uuid()` |
+| `userId` | `user_id` | `UUID` | Foreign Key `auth.users(id)` **ON DELETE CASCADE** |
+| `namaBarang` | `nama_barang` | `TEXT` | NOT NULL, min 1 karakter |
+| `namaToko` | `nama_toko` | `TEXT` | NOT NULL, min 1 karakter |
+| `tanggalBeli` | `tanggal_beli` | `DATE` | NOT NULL, tidak boleh melebihi tanggal hari ini |
+| `durasiGaransiBulan`| `durasi_garansi_bulan`| `INTEGER` | NOT NULL, **CHECK (durasi_garansi_bulan > 0)** |
+| `fotoPath` | `foto_path` | `TEXT` | Relatif path di bucket privat (misal: `{user_id}/{uuid}.jpg`) |
+| `kategori` | `kategori` | `TEXT` | NOT NULL, CHECK IN ('elektronik', 'kendaraan', 'pakaian', 'perabotan', 'lainnya') |
+| `createdAt` | `created_at` | `TIMESTAMPTZ` | NOT NULL, `default now()` |
 
 ---
 
 ## Database Rules & Security (Supabase PostgreSQL)
-* Table name: `receipts`.
-* Primary key `id` defaults to `gen_random_uuid()`.
-* Foreign key `user_id` defaults to `auth.uid()`.
-* **Row Level Security (RLS)** must be enabled:
-  ```sql
-  alter table receipts enable row level security;
+### 1. Skema Tabel & Constraint
+```sql
+create table receipts (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null default auth.uid(),
+  nama_barang text not null,
+  nama_toko text not null,
+  tanggal_beli date not null,
+  durasi_garansi_bulan integer not null check (durasi_garansi_bulan > 0),
+  foto_path text,
+  kategori text not null check (kategori in ('elektronik', 'kendaraan', 'pakaian', 'perabotan', 'lainnya')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
-  create policy "Users can view and manage their own receipts"
-  on receipts for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+-- RLS Receipts Table
+alter table receipts enable row level security;
+
+create policy "Users can view and manage their own receipts"
+on receipts for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+### 2. Aturan Relasi User & Lifecycle
+* Menggunakan **`ON DELETE CASCADE`**: Jika akun pengguna dihapus dari `auth.users`, seluruh entri nota miliknya di tabel `receipts` akan terhapus otomatis dari database.
+
+### 3. Aturan Penyimpanan Berkas Privat (Storage Security)
+* Bucket `receipts` disetel sebagai **PRIVATE** (Public access dimatikan).
+* Berkas disimpan dalam format isolasi path per user: `${user_id}/${receipt_id}.jpg`.
+* Kebijakan RLS Storage pada `storage.objects`:
+  ```sql
+  create policy "Users can access their own receipt photos"
+  on storage.objects for all
+  using (bucket_id = 'receipts' and auth.uid()::text = (storage.foldername(name))[1])
+  with check (bucket_id = 'receipts' and auth.uid()::text = (storage.foldername(name))[1]);
   ```
-* Deleting a receipt record must trigger deletion of the associated physical receipt photo in Supabase Storage (`receipts` bucket).
+* Aplikasi Flutter memuat foto nota menggunakan **Signed URL** sementara (`createSignedUrl(fotoPath, 3600)`) yang memiliki batas kedaluwarsa 60 menit.
 
 ---
 
 ## Backend Rules (Supabase & BaaS Logic)
-* **Row-Level Security (RLS) Enforcement:** Seluruh tabel database wajib mengaktifkan RLS; kueri SELECT, INSERT, UPDATE, dan DELETE hanya diizinkan jika `auth.uid() = user_id`.
-* **Automatic Audit Fields:** Kolom `id` digenerate otomatis menggunakan `gen_random_uuid()`, `user_id` otomatis terisi dari token sesi aktif via `auth.uid()`, dan `created_at` otomatis terisi `now()`.
-* **Data Isolation:** User tidak diizinkan membaca, mengubah, atau menghapus berkas dan entri nota milik pengguna lain dalam kondisi apa pun.
-* **Storage Cascading Policy:** Penghapusan entri data nota pada tabel database wajib diiringi penghapusan berkas fisik gambar terkait di Supabase Storage bucket `receipts`.
-* **File Storage Constraints:** Berkas unggahan dibatasi hanya format gambar (.jpg, .jpeg, .png) dengan penamaan berkas unik berbasis UUID/timestamp untuk mencegah penimpaan file (overwrite).
-* **Stateless Client Interaction:** Backend tidak menyimpan status sesi di sisi server; seluruh autentikasi mengandalkan JWT yang divalidasi langsung oleh Supabase Auth Gateway.
+* **Row-Level Security (RLS) Enforcement:** Seluruh query SELECT, INSERT, UPDATE, dan DELETE pada tabel maupun bucket storage wajib divalidasi via RLS berdasarkan token JWT `auth.uid()`.
+* **Zero Leakage:** URL gambar publik dilarang keras. Pengambilan gambar harus melewati token autentikasi atau signed URL.
+* **Storage Cascading Policy:** Jika sebuah nota dihapus lewat aplikasi, berkas gambar fisiknya pada Supabase Storage wajib ikut dihapus (`storage.from('receipts').remove([fotoPath])`).
+* **Input Validation Enforcement:** Durasi garansi wajib diverifikasi bernilai $\ge 1$ bulan baik pada validasi form antarmuka maupun *CHECK constraint* di database.
 
 ---
 
 ## Frontend Pages
 
 ### 1. Auth Screen (Login & Register)
-* Single screen with toggle/tab between Login and Register.
-* Form inputs: Email and Password with inline validation.
-* Auth state gate (`AuthGate`) listening to `onAuthStateChange` stream:
-  * Redirects authenticated sessions directly to `HomeScreen`.
-  * Redirects unauthenticated / logged-out sessions to `AuthScreen`.
+* Berisi toggle antara Login dan Register menggunakan Email & Password.
+* Validasi email baku dan password minimal 6 karakter.
+* `AuthGate` memantau status sesi Supabase dan mengarahkan ke `HomeScreen` jika login valid.
 
 ### 2. Home Screen (Dashboard & Search)
-* Category filtering using interactive horizontal choice chips (`Semua`, `Elektronik`, `Kendaraan`, `Pakaian`, `Perabotan`, `Lainnya`).
-* Real-time search bar filtering receipts by `NamaBarang` or `NamaToko`.
-* Calculated warranty status display on receipt cards:
-  * Calculates expiration date: `TanggalBeli + DurasiGaransiBulan`.
-  * Computes remaining days and applies color badge (`Aktif`, `Hampir Habis`, `Kedaluwarsa`).
-* Empty state feedback when no receipts match the active filter or when the database is empty.
-* Pull-to-refresh (`RefreshIndicator`) to sync data with Supabase.
-* Floating Action Button (FAB) navigating to `AddReceiptScreen`.
-* Sign-out trigger in the main AppBar.
+* Filter Chips: `Semua` (pilihan UI untuk reset filter), `Elektronik`, `Kendaraan`, `Pakaian`, `Perabotan`, `Lainnya`.
+* Search bar reaktif untuk menyaring `namaBarang` dan `namaToko`.
+* Komponen `ReceiptCard` menghitung status garansi secara dinamis via *getter* model Dart:
+  ```dart
+  DateTime get tanggalKedaluwarsa => tanggalBeli.add(Duration(days: durasiGaransiBulan * 30));
+  int get sisaHari => tanggalKedaluwarsa.difference(DateTime.now()).inDays;
+  WarrantyStatus get statusGaransi {
+    if (sisaHari < 0) return WarrantyStatus.expired;
+    if (sisaHari <= 7) return WarrantyStatus.expiringSoon;
+    return WarrantyStatus.active;
+  }
+  ```
+* Pull-to-refresh untuk menyinkronkan data dengan Supabase.
 
-### 3. Add Receipt Screen
-* Form inputs: Nama Barang, Nama Toko, Kategori (Dropdown), Tanggal Beli (`showDatePicker`), and Durasi Garansi (in months, with quick-select options like 6, 12, 24 months).
-* Strict validation preventing empty submissions.
-* Camera & Gallery picker via `image_picker`.
-* Image preview box and upload handler sending compressed image files to the Supabase `receipts` storage bucket.
-* Strictly manual entry (no automatic OCR).
+### 3. Add & Edit Receipt Screen
+* Form input:
+  * Nama Barang & Nama Toko (Validasi wajib isi).
+  * Kategori (Dropdown pilihan kategori sah, tanpa opsi "Semua").
+  * Tanggal Beli (`showDatePicker`, maksimal tanggal hari ini).
+  * Durasi Garansi (Input integer > 0 dengan opsi cepat: 6, 12, 24 bulan).
+* Integrasi Kamera & Galeri: Upload file gambar ke bucket privat dan simpan `fotoPath` relatifnya.
+* Mode Edit: Form yang sama dapat digunakan untuk memperbarui data nota lama.
 
 ### 4. Receipt Detail Screen
-* Full receipt detail view displaying metadata, days remaining, and expiration dates.
-* Interactive zoomable receipt photo preview using `InteractiveViewer`.
-* Edit button navigating to update form.
-* Delete confirmation dialog before permanently removing database rows and storage files.
-
+* Menampilkan informasi rincian lengkap nota, sisa hari, dan status garansi aktif.
+* Foto nota diambil menggunakan *Signed URL* dan ditampilkan dengan `InteractiveViewer` untuk fitur zoom.
+* Aksi tombol Hapus: Konfirmasi dialog -> hapus notifikasi lokal -> hapus berkas gambar di Storage -> hapus baris data di PostgreSQL.
 ---
 
 ## Local Notification System
-* Service class initializing `flutter_local_notifications` and timezone data.
-* Automatically schedules local device notifications upon receipt creation:
-  * **H-7 Notification:** 7 days prior to warranty expiration.
-  * **H-1 Notification:** 1 day prior to warranty expiration.
-* Notification copy: `"Garansi [Nama Barang] akan segera habis dalam [X] hari!"`.
-* Cancels scheduled notification IDs when the corresponding receipt is deleted.
+* Service class mengelola `flutter_local_notifications` dan zona waktu `timezone`.
+* Aturan Penjadwalan Unik: Gunakan integer hash berbasis `receipt.id` untuk ID notifikasi (contoh: `id.hashCode` untuk H-7, dan `id.hashCode + 1` untuk H-1).
+* **Aturan Reschedule (Edit Data):**
+  * Ketika pengguna mengubah `tanggalBeli` atau `durasiGaransiBulan`, sistem wajib membatalkan (*cancel*) ID notifikasi lama terlebih dahulu.
+  * Menghitung ulang tanggal kedaluwarsa baru, lalu menjadwalkan ulang (*reschedule*) notifikasi lokal H-7 dan H-1.
+* **Aturan Pembatalan (Hapus Data):**
+  * Ketika nota dihapus, sistem langsung memanggil `cancel(id.hashCode)` dan `cancel(id.hashCode + 1)`.
+* Notifikasi tidak akan dijadwalkan jika tanggal target (H-7 / H-1) sudah berada di masa lampau.
 
 ---
 
 ## UI Requirements
-* Follow Material Design 3 guidelines.
-* Primary theme colors: Deep Navy / Teal with neutral card surfaces.
-* Status badge color rules:
-  * **Aktif (Active):** Green (`#2E7D32`)
-  * **Hampir Habis (Expiring Soon <= 7 Days):** Orange (`#ED6C02`)
-  * **Kedaluwarsa (Expired):** Grey / Red (`#D32F2F`)
-* Indonesian language localization for all buttons, inputs, alerts, and navigation labels.
+* Mengikuti pedoman Material Design 3.
+* Palet warna utama: Deep Navy / Teal dengan permukaan kartu bernuansa netral.
+* Aturan warna badge status garansi:
+  * **Aktif (Active):** Hijau (`#2E7D32`)
+  * **Hampir Habis (Expiring Soon <= 7 Hari):** Oranye (`#ED6C02`)
+  * **Kedaluwarsa (Expired):** Abu-abu / Merah (`#D32F2F`)
+* Lokalisasi antarmuka bahasa Indonesia untuk seluruh tombol, input, peringatan, dan label navigasi.
 
 ---
 
 ## Deliverables
-* Complete Flutter source code following feature-first structure.
-* SQL migration script defining tables, storage buckets, and RLS policies for Supabase.
-* `.env.example` containing `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
-* Release APK build (`build/app/outputs/flutter-apk/app-release.apk`) targeted for deployment milestone.
-* Comprehensive documentation and weekly progress log.
+* Berkas kode sumber Flutter lengkap dengan integrasi Flutter Riverpod.
+* Skrip migrasi SQL Supabase (Tabel, RLS Policies, Storage bucket permissions).
+* Berkas `.env.example` untuk `SUPABASE_URL` dan `SUPABASE_ANON_KEY`.
+* Berkas rilis APK (`SimpanNota-v1.0.0-Release.apk`) pada milestone Minggu ke-8.
+* Lembar pengujian UAT dan laporan berkala mingguan.
   
 ---
 
@@ -168,53 +202,51 @@ simpan_nota/
         auth_gate.dart
     features/
       auth/
-        screens/
-          auth_screen.dart
+        presentation/
+          controllers/auth_controller.dart
+          screens/auth_screen.dart
         services/
           auth_service.dart
       receipts/
-        enums/
+        domain/
           category.dart
           warranty_status.dart
-        models/
           receipt_model.dart
-        dto/
-          receipt_filter_dto.dart
-          notification_payload_dto.dart
-        screens/
-          home_screen.dart
-          add_receipt_screen.          receipt_detail_screen.dart
+        presentation/
+          controllers/receipt_controller.dart
+          screens/
+            home_screen.dart
+            add_receipt_screen.dart
+            receipt_detail_screen.dart
+          widgets/
+            receipt_card.dart
+            category_chips.dart
         services/
           receipt_service.dart
           storage_service.dart
-        widgets/
-          receipt_card.dart
-          category_chips.dart
     main.dart
   pubspec.yaml
   README.md
 ```
-
 ---
 
 ## Core Shared Package & Module Requirements
-* Seluruh model domain, enumerasi, dan kontrak transfer data ditempatkan pada modul bersama di bawah `lib/core/` dan `lib/features/receipts/models/`.
+* Seluruh model domain, enumerasi, dan kontrak transfer data ditempatkan pada modul bersama di bawah `lib/core/` dan `lib/features/receipts/domain/`.
 * Modul UI (Screens & Widgets) dilarang memanipulasi *payload* mentah Map/JSON dari Supabase secara langsung; seluruh data wajib dipetakan melalui model entitas bersama.
-* Hindari duplikasi definisi properti antara lapisan servis (*service layer*), penyedia *state*, dan tampilan antarmuka.
+* Hindari duplikasi definisi properti antara lapisan servis (*service layer*), pengelola *state* (Riverpod), dan tampilan antarmuka.
 
 ## Example Shared Files
 ```text
 lib/
   core/
     constants/
-      app_constants.dart
+      app_colors.dart
       supabase_constants.dart
   features/
     receipts/
-      enums/
+      domain/
         category.dart
         warranty_status.dart
-      models/
         receipt_model.dart
       dto/
         receipt_filter_dto.dart
@@ -224,11 +256,12 @@ lib/
 ---
 
 ## Model Rules
-* Definisikan entitas Dart (`ReceiptModel`, `WarrantyStatus`) hanya satu kali pada lokasi model yang telah ditentukan.
+* Definisikan entitas Dart (`ReceiptModel`, `WarrantyStatus`, `Category`) hanya satu kali pada lokasi domain yang telah ditentukan.
 * Model `ReceiptModel` bertindak sebagai representasi data tunggal yang digunakan bersama oleh antarmuka pengguna (`HomeScreen`, `AddReceiptScreen`, `ReceiptDetailScreen`) dan servis data (`ReceiptService`).
 * Serialisasi database:
-  * Pemetaan dari kueri PostgreSQL Supabase ke objek Dart dilakukan melalui metode pabrik `ReceiptModel.fromMap(Map<String, dynamic> json)`.
-  * Konversi objek Dart ke format *payload* Supabase dilakukan melalui metode `ReceiptModel.toMap()`.
+  * Pemetaan dari kueri PostgreSQL Supabase ke objek Dart dilakukan melalui metode pabrik `ReceiptModel.fromMap(Map<String, dynamic> map)` (konversi `snake_case` Postgres ke `camelCase` Dart).
+  * Konversi objek Dart ke format *payload* Supabase dilakukan melalui metode `ReceiptModel.toMap()` (mengembalikan format `snake_case`).
 * Komponen widget tampilan murni menerima objek model yang bersifat *immutable*, bukan kueri langsung dari database.
+* Status garansi (`WarrantyStatus`) merupakan *computed property* murni di sisi client, bukan kolom yang diparsing dari database.
 
 ---
