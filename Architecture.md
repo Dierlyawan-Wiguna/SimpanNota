@@ -87,17 +87,6 @@ Help individual users, office workers, and household managers easily secure purc
 
 ---
 
-## Application Features
-
-### 1. Authentication (Supabase Auth)
-* Email and Password sign-up and sign-in with client-side validation.
-* Auth state gate (`AuthGate`) listening to `onAuthStateChange` stream:
-  * Redirects authenticated sessions directly to `HomeScreen`.
-  * Redirects unauthenticated / logged-out sessions to `AuthScreen`.
-* Sign-out trigger in the main AppBar.
-
----
-
 ## Frontend Pages
 
 ### 1. Auth Screen (Login & Register)
@@ -133,18 +122,7 @@ Help individual users, office workers, and household managers easily secure purc
 
 ---
 
-### 3. Manual Receipt Recording (Add Receipt Screen)
-* Form inputs: Nama Barang, Nama Toko, Kategori (Dropdown), Tanggal Beli (`showDatePicker`), and Durasi Garansi (in months, with quick-select options like 6, 12, 24 months).
-* Strict validation preventing empty submissions.
-* Camera & Gallery picker via `image_picker`.
-* Image preview box and upload handler sending compressed image files to the Supabase `receipts` storage bucket.
-
-### 4. Detail, Zoom & Deletion
-* Full receipt detail view displaying metadata, days remaining, and expiration dates.
-* Interactive zoomable receipt photo preview using `InteractiveViewer`.
-* Delete confirmation dialog before permanently removing database rows and storage files.
-
-### 5. Local Notification Reminders
+## Local Notification System
 * Service class initializing `flutter_local_notifications` and timezone data.
 * Automatically schedules local device notifications upon receipt creation:
   * **H-7 Notification:** 7 days prior to warranty expiration.
@@ -152,6 +130,26 @@ Help individual users, office workers, and household managers easily secure purc
 * Notification copy: `"Garansi [Nama Barang] akan segera habis dalam [X] hari!"`.
 * Cancels scheduled notification IDs when the corresponding receipt is deleted.
 
+---
+
+## UI Requirements
+* Follow Material Design 3 guidelines.
+* Primary theme colors: Deep Navy / Teal with neutral card surfaces.
+* Status badge color rules:
+  * **Aktif (Active):** Green (`#2E7D32`)
+  * **Hampir Habis (Expiring Soon <= 7 Days):** Orange (`#ED6C02`)
+  * **Kedaluwarsa (Expired):** Grey / Red (`#D32F2F`)
+* Indonesian language localization for all buttons, inputs, alerts, and navigation labels.
+
+---
+
+## Deliverables
+* Complete Flutter source code following feature-first structure.
+* SQL migration script defining tables, storage buckets, and RLS policies for Supabase.
+* `.env.example` containing `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+* Release APK build (`build/app/outputs/flutter-apk/app-release.apk`) targeted for deployment milestone.
+* Comprehensive documentation and weekly progress log.
+  
 ---
 
 ## Client Project Structure
@@ -176,13 +174,16 @@ simpan_nota/
           auth_service.dart
       receipts/
         enums/
+          category.dart
           warranty_status.dart
         models/
           receipt_model.dart
+        dto/
+          receipt_filter_dto.dart
+          notification_payload_dto.dart
         screens/
           home_screen.dart
-          add_receipt_screen.dart
-          receipt_detail_screen.dart
+          add_receipt_screen.          receipt_detail_screen.dart
         services/
           receipt_service.dart
           storage_service.dart
@@ -220,6 +221,8 @@ lib/
         notification_payload_dto.dart
 ```
 
+---
+
 ## Model Rules
 * Definisikan entitas Dart (`ReceiptModel`, `WarrantyStatus`) hanya satu kali pada lokasi model yang telah ditentukan.
 * Model `ReceiptModel` bertindak sebagai representasi data tunggal yang digunakan bersama oleh antarmuka pengguna (`HomeScreen`, `AddReceiptScreen`, `ReceiptDetailScreen`) dan servis data (`ReceiptService`).
@@ -229,21 +232,3 @@ lib/
 * Komponen widget tampilan murni menerima objek model yang bersifat *immutable*, bukan kueri langsung dari database.
 
 ---
-
-## UI Requirements
-* Follow Material Design 3 guidelines.
-* Primary theme colors: Deep Navy / Teal with neutral card surfaces.
-* Status badge color rules:
-  * **Aktif (Active):** Green (`#2E7D32`)
-  * **Hampir Habis (Expiring Soon <= 7 Days):** Orange (`#ED6C02`)
-  * **Kedaluwarsa (Expired):** Grey / Red (`#D32F2F`)
-* Indonesian language localization for all buttons, inputs, alerts, and navigation labels.
-
----
-
-## Deliverables
-* Complete Flutter source code following feature-first structure.
-* SQL migration script defining tables, storage buckets, and RLS policies for Supabase.
-* `.env.example` containing `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
-* Release APK build (`build/app/outputs/flutter-apk/app-release.apk`) targeted for deployment milestone.
-* Comprehensive documentation and weekly progress log.
