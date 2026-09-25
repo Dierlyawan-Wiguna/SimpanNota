@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simpan_nota/app.dart';
+import 'package:simpan_nota/main.dart';
 
 void main() {
-  testWidgets('App starts on LoginScreen', (WidgetTester tester) async {
+  testWidgets('App starts on AuthScreen', (WidgetTester tester) async {
     await tester.pumpWidget(const App());
-    expect(find.text('Masuk'), findsWidgets);
+    expect(find.text('SimpanNota'), findsWidgets);
   });
 }
