@@ -1,160 +1,237 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/category.dart';
+import '../controllers/add_receipt_notifier.dart';
 
-class AddReceiptScreen extends StatefulWidget {
+/// Screen untuk menambahkan nota baru. Menggunakan ConsumerStatefulWidget
+/// karena kita butuh TextEditingController (Stateful) dan juga butuh
+/// mengakses/mengamati state dari Riverpod (Consumer).
+class AddReceiptScreen extends ConsumerStatefulWidget {
   const AddReceiptScreen({super.key});
 
   @override
-  State<AddReceiptScreen> createState() => _AddReceiptScreenState();
+  ConsumerState<AddReceiptScreen> createState() => _AddReceiptScreenState();
 }
 
-class _AddReceiptScreenState extends State<AddReceiptScreen> {
+class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
+  // Controller untuk membaca inputan teks dari pengguna.
+  final TextEditingController _nameController = TextEditingController();
+  
+  // State lokal UI untuk menyimpan kategori mana yang sedang dipilih dari Dropdown.
   Category? _selectedCategory;
-  DateTime? _purchaseDate;
 
-  void _pickDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  /// Fungsi ini dipanggil ketika user menekan tombol "Simpan Nota".
+  Future<void> _onSubmit() async {
+    // Membaca object notifier untuk mengeksekusi logika submitReceipt.
+    // Menggunakan ref.read() (bukan ref.watch) karena fungsi ini dipanggil 
+    // dalam event callback (onPressed), bukan saat build method.
+    final notifier = ref.read(addReceiptNotifierProvider.notifier);
+    
+    // Meneruskan data form dari UI ke layer Notifier/Controller untuk divalidasi dan diproses.
+    final success = await notifier.submitReceipt(
+      _nameController.text, 
+      _selectedCategory,
     );
-    if (date != null) {
-      setState(() {
-        _purchaseDate = date;
-      });
+
+    // Cek mounted sebelum mengeksekusi aksi BuildContext setelah operasi asinkron (await).
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nota berhasil disimpan!')),
+      );
+      // Di aplikasi penuh, ini akan berupa Navigator.pop() atau goRouter untuk kembali ke Home.
+      // Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Mengamati/Subscribe state terbaru dari Notifier.
+    // Setiap kali `state` di dalam AddReceiptNotifier berubah (via copyWith), 
+    // block `build()` ini akan dipanggil ulang (re-build) untuk mencerminkan UI yang baru.
+    final state = ref.watch(addReceiptNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Nota'),
-        backgroundColor: AppColors.primaryNavy,
-        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: () {
-                // Mock Image Picker
-              },
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade400, style: BorderStyle.solid),
-                ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt, size: 40, color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text('Unggah Foto Nota', style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          
+          // Menggunakan fitur pattern matching dari `AsyncValue` (Riverpod)
+          // Memudahkan kita membagi UI menjadi 3 skenario: Loading, Data Sukses, Error.
+          child: state.categoriesState.when(
+            
+            // =================================================================
+            // KONDISI 1: Initial Loading
+            // Tampilan saat repository sedang mengambil daftar kategori nota.
+            // =================================================================
+            loading: () => const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Memuat daftar kategori...'),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Nama Barang',
-                border: OutlineInputBorder(),
+            
+            // =================================================================
+            // KONDISI 4: Error State
+            // Tampilan jika proses pengambilan kategori dari repository gagal.
+            // Lengkap dengan tombol "Coba Lagi" untuk mencoba mengulang request (retry).
+            // =================================================================
+            error: (error, stackTrace) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    error.toString(), 
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Trigger aksi fetch ulang (retry) pada Notifier.
+                      ref.read(addReceiptNotifierProvider.notifier).fetchCategories();
+                    },
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Nama Toko',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<Category>(
-              decoration: const InputDecoration(
-                labelText: 'Kategori',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _selectedCategory,
-              items: Category.values.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category.label),
+            
+            // =================================================================
+            // KONDISI 2 & 3: Data sukses dimuat, ATAU Empty State
+            // =================================================================
+            data: (categories) {
+              
+              // KONDISI 3: Empty state
+              // Menampilkan UI khusus jika daftar kategori yang diterima dari database ternyata kosong.
+              if (categories.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Daftar kategori nota kosong. Harap tambahkan kategori pada sistem terlebih dahulu.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _selectedCategory = val;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            InkWell(
-              onTap: _pickDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Tanggal Beli',
-                  border: OutlineInputBorder(),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(_purchaseDate == null
-                        ? 'Pilih Tanggal'
-                        : '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'),
-                    const Icon(Icons.calendar_today),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Durasi Garansi (Bulan)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _buildDurationChip(6),
-                const SizedBox(width: 8),
-                _buildDurationChip(12),
-                const SizedBox(width: 8),
-                _buildDurationChip(24),
-              ],
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryTeal,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
+              }
+              
+              // KONDISI 2: Data sukses dimuat (Formulir tampil sempurna)
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Form Input Nama Barang
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Barang',
+                      border: const OutlineInputBorder(),
+                      
+                      // KONDISI 5: Validasi form 
+                      // Mengambil pesan error dari state (jika tidak null dan memuat kata kunci) 
+                      // akan memicu TextField menampilkan underline dan teks merah secara otomatis.
+                      errorText: state.validationError != null && state.validationError!.contains('Nama')
+                          ? state.validationError
+                          : null,
+                    ),
+                    onChanged: (_) {
+                      // Hapus pesan error saat pengguna mulai memperbaiki ketikan/input.
+                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Form Dropdown Kategori
+                  DropdownButtonFormField<Category>(
+                    value: _selectedCategory,
+                    decoration: InputDecoration(
+                      labelText: 'Kategori Nota',
+                      border: const OutlineInputBorder(),
+                      
+                      // KONDISI 5: Validasi form untuk dropdown
+                      errorText: state.validationError != null && state.validationError!.contains('Kategori')
+                          ? state.validationError
+                          : null,
+                    ),
+                    hint: const Text('Pilih Kategori'),
+                    items: categories.map((Category cat) {
+                      return DropdownMenuItem<Category>(
+                        value: cat,
+                        child: Text(cat.label), // Contoh: "Elektronik", "Kendaraan"
+                      );
+                    }).toList(),
+                    onChanged: (Category? newValue) {
+                      setState(() {
+                        _selectedCategory = newValue;
+                      });
+                      // Hapus pesan error saat user selesai memilih.
+                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                    },
+                  ),
+                  
+                  const Spacer(),
+                  
+                  // =================================================================
+                  // KONDISI 6: Loading submit
+                  // =================================================================
+                  ElevatedButton(
+                    // Ketika `isSubmitting` bernilai true, kita set onPressed menjadi `null`.
+                    // Dalam Flutter, mengatur onPressed ke `null` akan otomatis men-disable tombol 
+                    // (merubah warna jadi pudar dan menonaktifkan klik).
+                    onPressed: state.isSubmitting ? null : _onSubmit,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    // Jika `isSubmitting` aktif, kita ubah teks menjadi Indikator Putaran.
+                    child: state.isSubmitting 
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Simpan Nota'),
+                  ),
+
+                  // =================================================================
+                  // TOMBOL BANTU (DEBUG / SIMULASI) 
+                  // Karena ini demonstrasi, kita tambahkan tombol bantu untuk mengetes Kondisi 3 dan 4.
+                  // =================================================================
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const Text('Panel Simulasi Pengujian:', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(Icons.error, size: 16),
+                        label: const Text('Test Error'),
+                        onPressed: () => ref.read(addReceiptNotifierProvider.notifier).fetchCategories(simulateError: true),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.delete_sweep, size: 16),
+                        label: const Text('Test Empty'),
+                        onPressed: () => ref.read(addReceiptNotifierProvider.notifier).fetchCategories(simulateEmpty: true),
+                      ),
+                    ],
+                  )
+                ],
+              );
+            },
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDurationChip(int months) {
-    return ActionChip(
-      label: Text('$months Bln'),
-      onPressed: () {
-        // Mock set duration
-      },
     );
   }
 }
