@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../domain/category.dart';
 
 // Provider untuk menginjeksi ReceiptRepository ke layer Notifier/Controller
@@ -14,11 +15,13 @@ class ReceiptRepository {
     bool simulateEmpty = false,
   }) async {
     // Simulasi loading dari jaringan selama 2 detik
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 10));
 
     if (simulateError) {
       // Melemparkan error untuk mensimulasikan kegagalan jaringan/server
-      throw Exception('Gagal mengambil daftar kategori dari server. Periksa koneksi Anda.');
+      throw Exception(
+        'Gagal mengambil daftar kategori dari server. Periksa koneksi Anda.',
+      );
     }
 
     if (simulateEmpty) {
@@ -34,7 +37,7 @@ class ReceiptRepository {
   Future<void> saveReceipt(String namaBarang, Category kategori) async {
     // Simulasi loading penyimpanan data selama 2 detik
     await Future.delayed(const Duration(seconds: 2));
-    
+
     // Di aplikasi nyata, proses ini akan memanggil API Supabase.
     // Misalnya: await supabase.from('receipts').insert({...});
   }
