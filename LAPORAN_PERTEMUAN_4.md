@@ -26,7 +26,7 @@ Pada fitur Tambah Nota ini, saya mendesain arsitekturnya dengan memisahkan tangg
 ---
 
 ## 3. Klaim Review & Modifikasi Mandiri
-Meskipun saya memanfaatkan AI sebagai alat bantu _pair-programming_ untuk mengonsep struktur boilerplate Riverpod, saya telah membaca dan mereviu secara teliti seluruh baris kode yang dihasilkan. Saya memastikan bahwa saya benar-benar memahami alur transisi dari state _loading_ ke _success_ maupun _error_, serta bagaimana lifecycle memori *Notifier* dikelola secara rapi dengan _modifier_ `autoDispose`. Setelah memahami mekanismenya secara penuh, saya melakukan modifikasi dan perbaikan mandiri; di antaranya memperbaiki logika teks pesan error pada validasi form agar lebih masuk akal dan ramah bagi _user_, serta melakukan penyesuaian gaya (*styling*) pada tombol *submit* agar senada dengan bahasa desain aplikasi SimpanNota secara keseluruhan.
+Meskipun saya memanfaatkan AI sebagai alat bantu _pair-programming_ untuk mengonsep struktur boilerplate Riverpod, saya telah membaca dan mereview secara teliti seluruh baris kode yang dihasilkan. Saya memastikan bahwa saya benar-benar memahami alur transisi dari state _loading_ ke _success_ maupun _error_, serta bagaimana lifecycle memori *Notifier* dikelola secara rapi dengan _modifier_ `autoDispose`. Setelah memahami mekanismenya secara penuh, saya melakukan modifikasi dan perbaikan mandiri; di antaranya memperbaiki logika teks pesan error pada validasi form agar lebih masuk akal dan ramah bagi _user_, serta melakukan penyesuaian gaya (*styling*) pada tombol *submit* agar senada dengan bahasa desain aplikasi SimpanNota secara keseluruhan.
 
 ---
 
