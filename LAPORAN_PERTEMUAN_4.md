@@ -34,22 +34,22 @@ Meskipun saya memanfaatkan AI sebagai alat bantu _pair-programming_ untuk mengon
 Berikut adalah bukti tangkapan layar untuk verifikasi tiap kondisi *state* pada halaman Tambah Nota di emulator/perangkat:
 
 ### a. Kondisi 1: Initial Loading
-![Initial Loading](path/to/screenshot_1_loading.png)
+![Initial Loading](screenshot_1_loading.png)
 
 ### b. Kondisi 2: Data Sukses Dimuat (Form Muncul)
-![Data Sukses Dimuat](path/to/screenshot_2_success.png)
+![Data Sukses Dimuat](screenshot_2_success.png)
 
 ### c. Kondisi 3: Empty State (Kategori Kosong)
-![Empty State](path/to/screenshot_3_empty.png)
+![Empty State](screenshot_3_empty.png)
 
 ### d. Kondisi 4: Error State (Koneksi Gagal)
-![Error State](path/to/screenshot_4_error.png)
+![Error State](screenshot_4_error.png)
 
 ### e. Kondisi 5: Validasi Form (Pesan Error pada TextField)
-![Validasi Form](path/to/screenshot_5_validation.png)
+![Validasi Form](screenshot_5_validation.png)
 
 ### f. Kondisi 6: Loading Submit (Tombol Berubah Jadi Spinner & Disabled)
-![Loading Submit](path/to/screenshot_6_submit_loading.png)
+![Loading Submit](screenshot_6_submit_loading.png)
 
 ---
 
