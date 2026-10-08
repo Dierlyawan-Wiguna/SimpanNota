@@ -6,11 +6,15 @@ import 'package:intl/intl.dart';
 import '../../domain/category.dart';
 import '../controllers/add_receipt_notifier.dart';
 
+import '../../domain/receipt.dart';
+
 /// Screen untuk menambahkan nota baru. Menggunakan ConsumerStatefulWidget
 /// karena kita butuh TextEditingController (Stateful) dan juga butuh
 /// mengakses/mengamati state dari Riverpod (Consumer).
 class AddReceiptScreen extends ConsumerStatefulWidget {
-  const AddReceiptScreen({super.key});
+  final Receipt? receiptToEdit;
+  
+  const AddReceiptScreen({super.key, this.receiptToEdit});
 
   @override
   ConsumerState<AddReceiptScreen> createState() => _AddReceiptScreenState();
@@ -26,6 +30,20 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   Category? _selectedCategory;
   DateTime? _purchaseDate;
   String? _imagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.receiptToEdit != null) {
+      final receipt = widget.receiptToEdit!;
+      _nameController.text = receipt.productName;
+      _storeController.text = receipt.storeName;
+      _warrantyController.text = receipt.warrantyMonths.toString();
+      _selectedCategory = receipt.category;
+      _purchaseDate = receipt.purchaseDate;
+      _imagePath = receipt.imagePath;
+    }
+  }
 
   @override
   void dispose() {
@@ -70,6 +88,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     
     // Meneruskan data form dari UI ke layer Notifier/Controller untuk divalidasi dan diproses.
     final success = await notifier.submitReceipt(
+      editId: widget.receiptToEdit?.id,
       productName: _nameController.text, 
       selectedCategory: _selectedCategory,
       storeName: _storeController.text,
@@ -81,7 +100,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     // Cek mounted sebelum mengeksekusi aksi BuildContext setelah operasi asinkron (await).
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nota berhasil disimpan!')),
+        SnackBar(content: Text(widget.receiptToEdit == null ? 'Nota berhasil disimpan!' : 'Nota berhasil diubah!')),
       );
       // Di aplikasi penuh, ini akan berupa Navigator.pop() atau goRouter untuk kembali ke Home.
       // Navigator.of(context).pop();
@@ -97,7 +116,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Nota'),
+        title: Text(widget.receiptToEdit == null ? 'Tambah Nota' : 'Ubah Nota'),
       ),
       body: SafeArea(
         child: Padding(
@@ -210,6 +229,9 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           // Form Input Nama Barang
                           TextField(
                             controller: _nameController,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textCapitalization: TextCapitalization.words,
                             decoration: InputDecoration(
                               labelText: 'Nama Barang',
                               border: const OutlineInputBorder(),
@@ -224,6 +246,9 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           // Form Input Nama Toko
                           TextField(
                             controller: _storeController,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textCapitalization: TextCapitalization.words,
                             decoration: InputDecoration(
                               labelText: 'Nama Toko',
                               border: const OutlineInputBorder(),
@@ -237,7 +262,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           
                           // Form Dropdown Kategori
                           DropdownButtonFormField<Category>(
-                            value: _selectedCategory,
+                            initialValue: _selectedCategory,
                             decoration: InputDecoration(
                               labelText: 'Kategori Nota',
                               border: const OutlineInputBorder(),
@@ -319,7 +344,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                             width: 24,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Simpan Nota'),
+                        : Text(widget.receiptToEdit == null ? 'Simpan Nota' : 'Simpan Perubahan'),
                   ),
 
                   // =================================================================

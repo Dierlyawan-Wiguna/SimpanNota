@@ -27,6 +27,9 @@ import 'package:simpan_nota/features/receipts/services/receipt_repository.dart';
 //    Lalu lakukan Save / Hot Restart.
 // =============================================================================
 
+import 'package:simpan_nota/features/receipts/domain/receipt.dart';
+import 'package:simpan_nota/core/local/database_helper.dart';
+
 /// Kelas Repository palsu (Mock) yang kita buat khusus untuk pengujian UI.
 /// Kita bisa memanipulasi parameter `shouldError` atau `shouldEmpty` 
 /// dari luar saat melakukan instance widget test.
@@ -34,7 +37,8 @@ class FakeReceiptRepository extends ReceiptRepository {
   final bool shouldError;
   final bool shouldEmpty;
   
-  FakeReceiptRepository({this.shouldError = false, this.shouldEmpty = false});
+  FakeReceiptRepository({this.shouldError = false, this.shouldEmpty = false})
+      : super(DatabaseHelper.instance);
 
   @override
   Future<List<Category>> fetchCategories({bool simulateError = false, bool simulateEmpty = false}) async {
@@ -49,7 +53,7 @@ class FakeReceiptRepository extends ReceiptRepository {
   }
   
   @override
-  Future<void> saveReceipt({
+  Future<Receipt> saveReceipt({
     required String namaBarang, 
     required Category kategori,
     required String namaToko,
@@ -60,6 +64,15 @@ class FakeReceiptRepository extends ReceiptRepository {
     // Delay menengah (500ms) agar pengujian (test) sempat "menangkap" 
     // UI tombol form yang sedang berubah menjadi Loading Indicator (Kondisi 6).
     await Future.delayed(const Duration(milliseconds: 500)); 
+    return Receipt(
+      id: 1,
+      productName: namaBarang,
+      category: kategori,
+      storeName: namaToko,
+      purchaseDate: tanggalBeli,
+      warrantyMonths: durasiGaransiBulan,
+      imagePath: fotoPath,
+    );
   }
 }
 

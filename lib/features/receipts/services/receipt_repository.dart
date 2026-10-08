@@ -1,40 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/category.dart';
+import '../domain/receipt.dart';
+import '../../../../core/local/database_helper.dart';
 
 // Provider untuk menginjeksi ReceiptRepository ke layer Notifier/Controller
 final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
-  return ReceiptRepository();
+  return ReceiptRepository(DatabaseHelper.instance);
 });
 
 class ReceiptRepository {
-  /// Mensimulasikan pengambilan data kategori dari server/database.
-  /// Ini digunakan untuk memenuhi syarat: (1) Initial loading, (3) Empty state, dan (4) Error state.
+  final DatabaseHelper _dbHelper;
+
+  ReceiptRepository(this._dbHelper);
+
+  /// Mengambil daftar kategori statis (opsional, jika Anda ingin menyimpannya di DB juga, bisa diubah)
   Future<List<Category>> fetchCategories({
     bool simulateError = false,
     bool simulateEmpty = false,
   }) async {
-    // Simulasi loading dari jaringan selama 2 detik
-    await Future.delayed(const Duration(seconds: 5));
+    // Simulasi loading
+    await Future.delayed(const Duration(seconds: 1));
 
     if (simulateError) {
-      // Melemparkan error untuk mensimulasikan kegagalan jaringan/server
-      throw Exception(
-        'Gagal mengambil daftar kategori dari server. Periksa koneksi Anda.',
-      );
+      throw Exception('Gagal mengambil daftar kategori.');
     }
 
     if (simulateEmpty) {
-      // Mengembalikan daftar kosong untuk mensimulasikan "Empty State"
       return [];
     }
 
-    // Mengembalikan data kategori yang sukses dimuat (2. Data sukses dimuat)
     return Category.values;
   }
 
-  /// Mensimulasikan proses penyimpanan data nota ke server/database.
-  Future<void> saveReceipt({
+  /// Mengambil daftar nota dari SQLite
+  Future<List<Receipt>> getReceipts() async {
+    return await _dbHelper.getReceipts();
+  }
+
+  /// Menyimpan nota baru ke SQLite
+  Future<Receipt> saveReceipt({
     required String namaBarang,
     required Category kategori,
     required String namaToko,
@@ -42,10 +47,43 @@ class ReceiptRepository {
     required int durasiGaransiBulan,
     required String fotoPath,
   }) async {
-    // Simulasi loading penyimpanan data selama 2 detik
-    await Future.delayed(const Duration(seconds: 2));
+    final receipt = Receipt(
+      productName: namaBarang,
+      category: kategori,
+      storeName: namaToko,
+      purchaseDate: tanggalBeli,
+      warrantyMonths: durasiGaransiBulan,
+      imagePath: fotoPath,
+    );
+    
+    return await _dbHelper.insertReceipt(receipt);
+  }
 
-    // Di aplikasi nyata, proses ini akan memanggil API Supabase.
-    // Misalnya: await supabase.from('receipts').insert({...});
+  /// Mengubah nota yang ada di SQLite
+  Future<int> updateReceipt({
+    required int id,
+    required String namaBarang,
+    required Category kategori,
+    required String namaToko,
+    required DateTime tanggalBeli,
+    required int durasiGaransiBulan,
+    required String fotoPath,
+  }) async {
+    final receipt = Receipt(
+      id: id,
+      productName: namaBarang,
+      category: kategori,
+      storeName: namaToko,
+      purchaseDate: tanggalBeli,
+      warrantyMonths: durasiGaransiBulan,
+      imagePath: fotoPath,
+    );
+    
+    return await _dbHelper.updateReceipt(receipt);
+  }
+
+  /// Menghapus nota dari SQLite berdasarkan ID
+  Future<int> deleteReceipt(int id) async {
+    return await _dbHelper.deleteReceipt(id);
   }
 }

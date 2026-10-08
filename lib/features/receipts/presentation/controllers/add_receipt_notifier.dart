@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 import '../../domain/category.dart';
 import '../../services/receipt_repository.dart';
+
+import 'receipt_list_notifier.dart';
 
 /// State untuk menyimpan seluruh kondisi UI pada halaman Tambah Nota.
 /// Penggunaan class State memisahkan data spesifik UI agar tertata rapi dan immutable.
@@ -84,6 +85,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
   /// Fungsi untuk memvalidasi dan menyimpan data formulir input Nota Baru.
   /// Mengembalikan true apabila proses simpan berjalan sukses, atau false jika validasi gagal.
   Future<bool> submitReceipt({
+    int? editId,
     required String productName,
     required Category? selectedCategory,
     required String storeName,
@@ -132,16 +134,32 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
     try {
       final repository = ref.read(receiptRepositoryProvider);
       
-      // Lakukan proses simpan data melalui repository
-      await repository.saveReceipt(
-        namaBarang: productName,
-        kategori: selectedCategory,
-        namaToko: storeName,
-        tanggalBeli: purchaseDate,
-        durasiGaransiBulan: int.parse(warrantyMonths.trim()),
-        fotoPath: imagePath,
-      );
+      if (editId != null) {
+        // Lakukan proses update data
+        await repository.updateReceipt(
+          id: editId,
+          namaBarang: productName,
+          kategori: selectedCategory,
+          namaToko: storeName,
+          tanggalBeli: purchaseDate,
+          durasiGaransiBulan: int.parse(warrantyMonths.trim()),
+          fotoPath: imagePath,
+        );
+      } else {
+        // Lakukan proses simpan data baru
+        await repository.saveReceipt(
+          namaBarang: productName,
+          kategori: selectedCategory,
+          namaToko: storeName,
+          tanggalBeli: purchaseDate,
+          durasiGaransiBulan: int.parse(warrantyMonths.trim()),
+          fotoPath: imagePath,
+        );
+      }
       
+      // Refresh list nota di halaman depan
+      ref.read(receiptListProvider.notifier).loadReceipts();
+
       // Setelah sukses disimpan, setel kembali isSubmitting.
       state = state.copyWith(isSubmitting: false);
       return true; // Menandakan bahwa proses submit sukses dan UI bisa bernavigasi/keluar (Pop screen).

@@ -6,11 +6,16 @@ import 'add_receipt_screen.dart';
 import 'receipt_detail_screen.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../controllers/receipt_list_notifier.dart';
+
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final receiptListState = ref.watch(filteredReceiptListProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('SimpanNota'),
@@ -41,20 +46,52 @@ class HomeScreen extends StatelessWidget {
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
+              onChanged: (value) {
+                ref.read(searchQueryProvider.notifier).update(value);
+              },
             ),
           ),
           const CategoryChips(),
           const SizedBox(height: 8),
           Expanded(
-            child: ListView.builder(
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                return ReceiptCard(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ReceiptDetailScreen(),
+            child: receiptListState.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+              data: (receipts) {
+                if (receipts.isEmpty) {
+                  return const Center(child: Text('Belum ada nota tersimpan.'));
+                }
+                return ListView.builder(
+                  itemCount: receipts.length,
+                  itemBuilder: (context, index) {
+                    final receipt = receipts[index];
+                    return Dismissible(
+                      key: ValueKey(receipt.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      onDismissed: (direction) {
+                        if (receipt.id != null) {
+                          ref.read(receiptListProvider.notifier).deleteReceipt(receipt.id!);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${receipt.productName} dihapus')),
+                          );
+                        }
+                      },
+                      child: ReceiptCard(
+                        receipt: receipt,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ReceiptDetailScreen(receipt: receipt),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },

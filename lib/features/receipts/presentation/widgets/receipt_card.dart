@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/warranty_status.dart';
 
+import '../../domain/receipt.dart';
+
 class ReceiptCard extends StatelessWidget {
+  final Receipt receipt;
   final VoidCallback onTap;
 
-  const ReceiptCard({super.key, required this.onTap});
+  const ReceiptCard({super.key, required this.receipt, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -32,26 +35,26 @@ class ReceiptCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Laptop Asus ROG',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Text(
+                      receipt.productName,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Tokopedia',
-                      style: TextStyle(color: Colors.grey),
+                    Text(
+                      receipt.storeName,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.statusActive.withValues(alpha: 0.1),
+                        color: _getStatusColor(receipt.status).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        WarrantyStatus.active.label,
-                        style: const TextStyle(
-                          color: AppColors.statusActive,
+                        receipt.status.label,
+                        style: TextStyle(
+                          color: _getStatusColor(receipt.status),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -65,5 +68,16 @@ class ReceiptCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(WarrantyStatus status) {
+    switch (status) {
+      case WarrantyStatus.active:
+        return AppColors.statusActive;
+      case WarrantyStatus.expiringSoon:
+        return AppColors.statusExpiring;
+      case WarrantyStatus.expired:
+        return AppColors.statusExpired;
+    }
   }
 }
