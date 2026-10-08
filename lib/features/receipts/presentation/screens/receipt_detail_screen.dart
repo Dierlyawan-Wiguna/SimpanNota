@@ -10,7 +10,7 @@ class ReceiptDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Nota'),
-        backgroundColor: AppColors.primaryNavy,
+        backgroundColor: AppColors.primaryBlue,
         foregroundColor: Colors.white,
         actions: [
           IconButton(

@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../domain/category.dart';
 import '../controllers/add_receipt_notifier.dart';
 
@@ -16,14 +19,46 @@ class AddReceiptScreen extends ConsumerStatefulWidget {
 class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   // Controller untuk membaca inputan teks dari pengguna.
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _storeController = TextEditingController();
+  final TextEditingController _warrantyController = TextEditingController();
   
-  // State lokal UI untuk menyimpan kategori mana yang sedang dipilih dari Dropdown.
+  // State lokal UI
   Category? _selectedCategory;
+  DateTime? _purchaseDate;
+  String? _imagePath;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _storeController.dispose();
+    _warrantyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _purchaseDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _purchaseDate) {
+      setState(() {
+        _purchaseDate = picked;
+      });
+      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+    }
   }
 
   /// Fungsi ini dipanggil ketika user menekan tombol "Simpan Nota".
@@ -35,8 +70,12 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     
     // Meneruskan data form dari UI ke layer Notifier/Controller untuk divalidasi dan diproses.
     final success = await notifier.submitReceipt(
-      _nameController.text, 
-      _selectedCategory,
+      productName: _nameController.text, 
+      selectedCategory: _selectedCategory,
+      storeName: _storeController.text,
+      purchaseDate: _purchaseDate,
+      warrantyMonths: _warrantyController.text,
+      imagePath: _imagePath,
     );
 
     // Cek mounted sebelum mengeksekusi aksi BuildContext setelah operasi asinkron (await).
@@ -132,56 +171,135 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Form Input Nama Barang
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nama Barang',
-                      border: const OutlineInputBorder(),
-                      
-                      // KONDISI 5: Validasi form 
-                      // Mengambil pesan error dari state (jika tidak null dan memuat kata kunci) 
-                      // akan memicu TextField menampilkan underline dan teks merah secara otomatis.
-                      errorText: state.validationError != null && state.validationError!.contains('Nama')
-                          ? state.validationError
-                          : null,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Form Upload Foto Nota
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: state.validationError != null && state.validationError!.contains('Foto') 
+                                      ? Colors.red 
+                                      : Colors.grey.shade400,
+                                ),
+                              ),
+                              child: _imagePath != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(File(_imagePath!), fit: BoxFit.cover),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.add_a_photo, size: 48, color: Colors.grey.shade500),
+                                        const SizedBox(height: 8),
+                                        Text('Upload Foto Nota', style: TextStyle(color: Colors.grey.shade600)),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Form Input Nama Barang
+                          TextField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Nama Barang',
+                              border: const OutlineInputBorder(),
+                              errorText: state.validationError != null && state.validationError!.contains('Nama barang')
+                                  ? state.validationError
+                                  : null,
+                            ),
+                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Form Input Nama Toko
+                          TextField(
+                            controller: _storeController,
+                            decoration: InputDecoration(
+                              labelText: 'Nama Toko',
+                              border: const OutlineInputBorder(),
+                              errorText: state.validationError != null && state.validationError!.contains('Nama toko')
+                                  ? state.validationError
+                                  : null,
+                            ),
+                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Form Dropdown Kategori
+                          DropdownButtonFormField<Category>(
+                            value: _selectedCategory,
+                            decoration: InputDecoration(
+                              labelText: 'Kategori Nota',
+                              border: const OutlineInputBorder(),
+                              errorText: state.validationError != null && state.validationError!.contains('Kategori')
+                                  ? state.validationError
+                                  : null,
+                            ),
+                            hint: const Text('Pilih Kategori'),
+                            items: categories.map((Category cat) {
+                              return DropdownMenuItem<Category>(
+                                value: cat,
+                                child: Text(cat.label),
+                              );
+                            }).toList(),
+                            onChanged: (Category? newValue) {
+                              setState(() {
+                                _selectedCategory = newValue;
+                              });
+                              ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Form Tanggal Beli
+                          InkWell(
+                            onTap: _pickDate,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Tanggal Beli',
+                                border: const OutlineInputBorder(),
+                                errorText: state.validationError != null && state.validationError!.contains('Tanggal beli')
+                                    ? state.validationError
+                                    : null,
+                              ),
+                              child: Text(
+                                _purchaseDate == null
+                                    ? 'Pilih Tanggal'
+                                    : DateFormat('dd MMMM yyyy', 'id_ID').format(_purchaseDate!),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Form Durasi Garansi
+                          TextField(
+                            controller: _warrantyController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Durasi Garansi (Bulan)',
+                              border: const OutlineInputBorder(),
+                              errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
+                                  ? state.validationError
+                                  : null,
+                            ),
+                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
+                          ),
+                        ],
+                      ),
                     ),
-                    onChanged: (_) {
-                      // Hapus pesan error saat pengguna mulai memperbaiki ketikan/input.
-                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
-                    },
                   ),
+                  
                   const SizedBox(height: 16),
-                  
-                  // Form Dropdown Kategori
-                  DropdownButtonFormField<Category>(
-                    value: _selectedCategory,
-                    decoration: InputDecoration(
-                      labelText: 'Kategori Nota',
-                      border: const OutlineInputBorder(),
-                      
-                      // KONDISI 5: Validasi form untuk dropdown
-                      errorText: state.validationError != null && state.validationError!.contains('Kategori')
-                          ? state.validationError
-                          : null,
-                    ),
-                    hint: const Text('Pilih Kategori'),
-                    items: categories.map((Category cat) {
-                      return DropdownMenuItem<Category>(
-                        value: cat,
-                        child: Text(cat.label), // Contoh: "Elektronik", "Kendaraan"
-                      );
-                    }).toList(),
-                    onChanged: (Category? newValue) {
-                      setState(() {
-                        _selectedCategory = newValue;
-                      });
-                      // Hapus pesan error saat user selesai memilih.
-                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
-                    },
-                  ),
-                  
-                  const Spacer(),
                   
                   // =================================================================
                   // KONDISI 6: Loading submit

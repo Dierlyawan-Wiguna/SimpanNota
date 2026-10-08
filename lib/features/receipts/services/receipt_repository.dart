@@ -15,7 +15,7 @@ class ReceiptRepository {
     bool simulateEmpty = false,
   }) async {
     // Simulasi loading dari jaringan selama 2 detik
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 5));
 
     if (simulateError) {
       // Melemparkan error untuk mensimulasikan kegagalan jaringan/server
@@ -34,7 +34,14 @@ class ReceiptRepository {
   }
 
   /// Mensimulasikan proses penyimpanan data nota ke server/database.
-  Future<void> saveReceipt(String namaBarang, Category kategori) async {
+  Future<void> saveReceipt({
+    required String namaBarang,
+    required Category kategori,
+    required String namaToko,
+    required DateTime tanggalBeli,
+    required int durasiGaransiBulan,
+    required String fotoPath,
+  }) async {
     // Simulasi loading penyimpanan data selama 2 detik
     await Future.delayed(const Duration(seconds: 2));
 

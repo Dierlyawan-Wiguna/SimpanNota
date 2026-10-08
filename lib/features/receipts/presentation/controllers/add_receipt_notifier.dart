@@ -83,17 +83,42 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
 
   /// Fungsi untuk memvalidasi dan menyimpan data formulir input Nota Baru.
   /// Mengembalikan true apabila proses simpan berjalan sukses, atau false jika validasi gagal.
-  Future<bool> submitReceipt(String productName, Category? selectedCategory) async {
+  Future<bool> submitReceipt({
+    required String productName,
+    required Category? selectedCategory,
+    required String storeName,
+    required DateTime? purchaseDate,
+    required String warrantyMonths,
+    required String? imagePath,
+  }) async {
     // 5. Validasi Form
-    // Periksa apakah nama barang yang diinputkan pengguna kosong atau hanya terdiri dari spasi.
     if (productName.trim().isEmpty) {
       state = state.copyWith(validationError: 'Nama barang tidak boleh kosong.');
       return false;
     }
     
-    // Periksa apakah kategori belum dipilih oleh pengguna dari Dropdown.
     if (selectedCategory == null) {
       state = state.copyWith(validationError: 'Kategori harus dipilih terlebih dahulu.');
+      return false;
+    }
+
+    if (storeName.trim().isEmpty) {
+      state = state.copyWith(validationError: 'Nama toko tidak boleh kosong.');
+      return false;
+    }
+
+    if (purchaseDate == null) {
+      state = state.copyWith(validationError: 'Tanggal beli harus diisi.');
+      return false;
+    }
+
+    if (warrantyMonths.trim().isEmpty || int.tryParse(warrantyMonths.trim()) == null) {
+      state = state.copyWith(validationError: 'Durasi garansi (bulan) tidak valid.');
+      return false;
+    }
+
+    if (imagePath == null || imagePath.isEmpty) {
+      state = state.copyWith(validationError: 'Foto nota harus dilampirkan.');
       return false;
     }
 
@@ -107,8 +132,15 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
     try {
       final repository = ref.read(receiptRepositoryProvider);
       
-      // Lakukan proses simpan data melalui repository (mensimulasikan call ke backend/Supabase).
-      await repository.saveReceipt(productName, selectedCategory);
+      // Lakukan proses simpan data melalui repository
+      await repository.saveReceipt(
+        namaBarang: productName,
+        kategori: selectedCategory,
+        namaToko: storeName,
+        tanggalBeli: purchaseDate,
+        durasiGaransiBulan: int.parse(warrantyMonths.trim()),
+        fotoPath: imagePath,
+      );
       
       // Setelah sukses disimpan, setel kembali isSubmitting.
       state = state.copyWith(isSubmitting: false);

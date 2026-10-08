@@ -14,7 +14,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SimpanNota'),
-        backgroundColor: AppColors.primaryNavy,
+        backgroundColor: AppColors.primaryBlue,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => const AuthScreen()),
+                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
               );
             },
           ),
@@ -65,7 +65,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primaryTeal,
+        backgroundColor: AppColors.primaryBlue,
         foregroundColor: Colors.white,
         onPressed: () {
           Navigator.push(

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/constants/app_colors.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   runApp(const ProviderScope(child: App()));
 }
 
@@ -18,9 +20,9 @@ class App extends StatelessWidget {
       title: 'SimpanNota',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryNavy),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryBlue),
       ),
-      home: const AuthScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }

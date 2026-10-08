@@ -22,7 +22,7 @@ class CategoryChips extends StatelessWidget {
             child: ChoiceChip(
               label: Text(categories[index]),
               selected: isSelected,
-              selectedColor: AppColors.primaryTeal.withValues(alpha: 0.2),
+              selectedColor: AppColors.primaryBlue.withValues(alpha: 0.2),
               onSelected: (bool selected) {},
             ),
           );
