@@ -43,16 +43,16 @@ Untuk membuktikan bahwa data nota benar-benar tersimpan ke dalam penyimpanan fis
 
 1. **Tambahkan Data Baru**
    Buka aplikasi dan buat satu nota baru. Isi detailnya, lalu tekan "Simpan". Pastikan nota tersebut muncul di daftar halaman Dashboard.
-   Nota baru.png
+   ![Tambahkan Data Baru](Nota baru.png)
    
 3. **Matikan Aplikasi Secara Paksa (Force Close)**
    Tutup paksa aplikasi dengan cara mengusapnya (swipe) dari daftar aplikasi terbaru (Recent Apps/Task Manager) di emulator atau perangkat fisik Anda. Pastikan proses aplikasi benar-benar terhenti.
-   Daftar aplikasi.png
-   Force close.png
+   ![Matikan Aplikasi Secara Paksa](Daftar aplikasi.png)
+   ![Matikan Aplikasi Secara Paksa](Force close.png)
    
 5. **Verifikasi Keutuhan Data**
    Buka kembali aplikasi SimpanNota. Data yang Anda buat pada langkah pertama harus tetap muncul dan bertahan di halaman Dashboard, membuktikan bahwa aplikasi sukses melakukan inisialisasi ulang data langsung dari database SQLite lokal.
-   Nota tersimpan.png
+   ![Verifikasi Keutuhan Data](Nota tersimpan.png)
 
 ---
 *Terima kasih telah melakukan peninjauan (review) pada tugas ini.*
