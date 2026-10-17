@@ -82,8 +82,6 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   /// Fungsi ini dipanggil ketika user menekan tombol "Simpan Nota".
   Future<void> _onSubmit() async {
     // Membaca object notifier untuk mengeksekusi logika submitReceipt.
-    // Menggunakan ref.read() (bukan ref.watch) karena fungsi ini dipanggil 
-    // dalam event callback (onPressed), bukan saat build method.
     final notifier = ref.read(addReceiptNotifierProvider.notifier);
     
     // Meneruskan data form dari UI ke layer Notifier/Controller untuk divalidasi dan diproses.
@@ -97,13 +95,20 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       imagePath: _imagePath,
     );
 
-    // Cek mounted sebelum mengeksekusi aksi BuildContext setelah operasi asinkron (await).
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.receiptToEdit == null ? 'Nota berhasil disimpan!' : 'Nota berhasil diubah!')),
-      );
-      // Di aplikasi penuh, ini akan berupa Navigator.pop() atau goRouter untuk kembali ke Home.
-      // Navigator.of(context).pop();
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.receiptToEdit == null ? 'Nota berhasil disimpan ke Server!' : 'Nota berhasil diubah!')),
+        );
+        Navigator.of(context).pop();
+      } else {
+        final error = ref.read(addReceiptNotifierProvider).validationError;
+        if (error != null && error.startsWith('Gagal menyimpan')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 

@@ -61,6 +61,47 @@ class Receipt {
     );
   }
 
+  // API Integration: toJson
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productName': productName,
+      'category': category.name,
+      'storeName': storeName,
+      'purchaseDate': purchaseDate.toIso8601String(),
+      'warrantyMonths': warrantyMonths,
+      'imagePath': imagePath,
+      // Dukungan sementara untuk jsonplaceholder
+      'title': productName,
+      'body': storeName,
+      'userId': 1,
+    };
+  }
+
+  // API Integration: fromJson dengan exception handling
+  factory Receipt.fromJson(Map<String, dynamic> json) {
+    try {
+      return Receipt(
+        id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
+        productName: (json['productName'] ?? json['title'] ?? 'Unknown Product').toString(),
+        category: Category.values.firstWhere(
+          (e) => e.name == json['category'],
+          orElse: () => Category.elektronik,
+        ),
+        storeName: (json['storeName'] ?? 'Unknown Store').toString(),
+        purchaseDate: json['purchaseDate'] != null 
+            ? DateTime.tryParse(json['purchaseDate'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+        warrantyMonths: json['warrantyMonths'] != null 
+            ? int.tryParse(json['warrantyMonths'].toString()) ?? 0
+            : 0,
+        imagePath: (json['imagePath'] ?? '').toString(),
+      );
+    } catch (e) {
+      throw FormatException('Gagal melakukan parsing JSON API ke bentuk Receipt: $e');
+    }
+  }
+
   Receipt copyWith({
     int? id,
     String? productName,

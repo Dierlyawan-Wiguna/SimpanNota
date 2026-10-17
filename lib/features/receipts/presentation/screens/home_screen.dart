@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/receipt_card.dart';
@@ -7,6 +8,7 @@ import 'receipt_detail_screen.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../controllers/receipt_list_notifier.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -55,11 +57,45 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Expanded(
             child: receiptListState.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Error: $error')),
+              loading: () => const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Memuat data dari server...'),
+                  ],
+                ),
+              ),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Memanggil fungsi fetch API lagi (retry)
+                        ref.read(receiptListProvider.notifier).loadReceipts();
+                      },
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              ),
               data: (receipts) {
                 if (receipts.isEmpty) {
-                  return const Center(child: Text('Belum ada nota tersimpan.'));
+                  return const Center(child: Text('Belum ada nota di server.'));
                 }
                 return ListView.builder(
                   itemCount: receipts.length,
@@ -76,9 +112,13 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       onDismissed: (direction) {
                         if (receipt.id != null) {
-                          ref.read(receiptListProvider.notifier).deleteReceipt(receipt.id!);
+                          ref
+                              .read(receiptListProvider.notifier)
+                              .deleteReceipt(receipt.id!);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${receipt.productName} dihapus')),
+                            SnackBar(
+                              content: Text('${receipt.productName} dihapus'),
+                            ),
                           );
                         }
                       },
@@ -88,7 +128,8 @@ class HomeScreen extends ConsumerWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ReceiptDetailScreen(receipt: receipt),
+                              builder: (_) =>
+                                  ReceiptDetailScreen(receipt: receipt),
                             ),
                           );
                         },
