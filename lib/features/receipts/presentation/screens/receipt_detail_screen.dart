@@ -90,17 +90,29 @@ class ReceiptDetailScreen extends ConsumerWidget {
                   Positioned.fill(
                     child: InteractiveViewer(
                       child: Center(
-                        child: Image.file(
-                          File(receipt.imagePath),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.broken_image,
-                                size: 100,
-                                color: Colors.grey,
+                        child: receipt.imagePath.startsWith('http')
+                            ? Image.network(
+                                receipt.imagePath,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(
+                                  Icons.broken_image,
+                                  size: 100,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            : Image.file(
+                                File(receipt.imagePath),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(
+                                  Icons.broken_image,
+                                  size: 100,
+                                  color: Colors.grey,
+                                ),
                               ),
-                        ),
                       ),
                     ),
                   ),

@@ -78,24 +78,42 @@ class Receipt {
     };
   }
 
-  // API Integration: fromJson dengan exception handling
+  // Supabase PostgreSQL mapping: toSupabaseMap
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      if (id != null) 'id': id,
+      'product_name': productName,
+      'category': category.name.toLowerCase(),
+      'store_name': storeName,
+      'purchase_date': purchaseDate.toIso8601String().split('T').first,
+      'warranty_months': warrantyMonths,
+      'image_path': imagePath,
+    };
+  }
+
+  // API Integration: fromJson dengan exception handling & multi-format (camelCase & snake_case)
   factory Receipt.fromJson(Map<String, dynamic> json) {
     try {
+      final rawCategory = (json['category'] ?? '').toString().toLowerCase();
+      final dateRaw = json['purchase_date'] ?? json['purchaseDate'];
+      final monthsRaw = json['warranty_months'] ?? json['warrantyMonths'];
+      final imageRaw = json['image_path'] ?? json['imagePath'] ?? '';
+
       return Receipt(
         id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
-        productName: (json['productName'] ?? json['title'] ?? 'Unknown Product').toString(),
+        productName: (json['product_name'] ?? json['productName'] ?? json['title'] ?? 'Unknown Product').toString(),
         category: Category.values.firstWhere(
-          (e) => e.name == json['category'],
+          (e) => e.name.toLowerCase() == rawCategory,
           orElse: () => Category.elektronik,
         ),
-        storeName: (json['storeName'] ?? 'Unknown Store').toString(),
-        purchaseDate: json['purchaseDate'] != null 
-            ? DateTime.tryParse(json['purchaseDate'].toString()) ?? DateTime.now()
+        storeName: (json['store_name'] ?? json['storeName'] ?? 'Unknown Store').toString(),
+        purchaseDate: dateRaw != null 
+            ? DateTime.tryParse(dateRaw.toString()) ?? DateTime.now()
             : DateTime.now(),
-        warrantyMonths: json['warrantyMonths'] != null 
-            ? int.tryParse(json['warrantyMonths'].toString()) ?? 0
+        warrantyMonths: monthsRaw != null 
+            ? int.tryParse(monthsRaw.toString()) ?? 0
             : 0,
-        imagePath: (json['imagePath'] ?? '').toString(),
+        imagePath: imageRaw.toString(),
       );
     } catch (e) {
       throw FormatException('Gagal melakukan parsing JSON API ke bentuk Receipt: $e');
