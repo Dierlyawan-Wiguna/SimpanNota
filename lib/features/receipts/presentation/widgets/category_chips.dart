@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/category.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/receipt_list_notifier.dart';
 
+/// Filter kategori bergaya pill rounded yang elegan dan konsisten
 class CategoryChips extends ConsumerWidget {
   const CategoryChips({super.key});
 
@@ -16,7 +16,7 @@ class CategoryChips extends ConsumerWidget {
     final categoriesList = [null, ...Category.values];
 
     return SizedBox(
-      height: 50,
+      height: 44,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -28,15 +28,40 @@ class CategoryChips extends ConsumerWidget {
           
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(label),
+            child: Semantics(
+              button: true,
               selected: isSelected,
-              selectedColor: AppColors.primaryBlue.withValues(alpha: 0.2),
-              onSelected: (bool selected) {
-                if (selected) {
-                  ref.read(selectedCategoryProvider.notifier).select(cat);
-                }
-              },
+              label: 'Filter kategori $label',
+              hint: isSelected
+                  ? 'Kategori sedang aktif'
+                  : 'Ketuk untuk memfilter daftar nota berdasarkan kategori $label',
+              child: ChoiceChip(
+                label: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textBody,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: AppColors.primaryBlue,
+                backgroundColor: AppColors.surface,
+                side: BorderSide(
+                  color: isSelected ? AppColors.primaryBlue : AppColors.cardBorder,
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                showCheckmark: false,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                onSelected: (bool selected) {
+                  if (selected) {
+                    ref.read(selectedCategoryProvider.notifier).select(cat);
+                  }
+                },
+              ),
             ),
           );
         },

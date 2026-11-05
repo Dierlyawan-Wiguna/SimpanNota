@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,17 +15,13 @@ final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
 
 class ReceiptRepository {
   final DatabaseHelper _dbHelper;
-  final http.Client _client;
   final SupabaseClient? _customSupabaseClient;
-  final String _baseUrl =
-      'https://jsonplaceholder.typicode.com/posts'; // Mock API sementara
 
   ReceiptRepository(
     this._dbHelper, {
-    http.Client? client,
+    Object? client,
     SupabaseClient? supabaseClient,
-  })  : _client = client ?? http.Client(),
-        _customSupabaseClient = supabaseClient;
+  }) : _customSupabaseClient = supabaseClient;
 
   SupabaseClient? get _supabase {
     if (_customSupabaseClient != null) return _customSupabaseClient;
@@ -82,7 +76,7 @@ class ReceiptRepository {
     }
   }
 
-  /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback REST API / SQLite)
+  /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback SQLite lokal)
   Future<List<Receipt>> getReceipts() async {
     final sb = _supabase;
     if (sb != null) {
@@ -99,31 +93,24 @@ class ReceiptRepository {
             .map((json) => Receipt.fromJson(json as Map<String, dynamic>))
             .toList();
       } catch (e) {
-        throw Exception('Gagal memuat data dari Supabase: $e');
+        // Jika tabel Supabase belum ada atau koneksi bermasalah, fallback ke SQLite
+        try {
+          return await _dbHelper.getReceipts();
+        } catch (_) {
+          throw Exception('Gagal memuat data dari Supabase: $e');
+        }
       }
     }
 
-    // Fallback ke REST API (Pertemuan 6) bila Supabase belum dikonfigurasi
+    // Fallback SQLite lokal jika Supabase tidak aktif
     try {
-      final response = await _client.get(Uri.parse(_baseUrl));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Receipt.fromJson(json)).toList();
-      } else {
-        throw Exception(
-          'Gagal memuat data dari server (Status: ${response.statusCode})',
-        );
-      }
-    } catch (e) {
-      if (e is FormatException) {
-        throw Exception('Format JSON rusak: $e');
-      }
-      throw Exception('Terjadi kesalahan jaringan atau server: $e');
+      return await _dbHelper.getReceipts();
+    } catch (_) {
+      return [];
     }
   }
 
-  /// POST: Menyimpan nota baru ke Supabase PostgreSQL (atau fallback REST API)
+  /// POST: Menyimpan nota baru ke Supabase PostgreSQL (atau fallback SQLite lokal)
   Future<Receipt> saveReceipt({
     required String namaBarang,
     required Category kategori,
@@ -159,29 +146,16 @@ class ReceiptRepository {
             .single();
         return Receipt.fromJson(response);
       } catch (e) {
+        // Jika Supabase gagal, simpan ke database lokal agar data user tidak hilang
+        try {
+          return await _dbHelper.insertReceipt(receipt);
+        } catch (_) {}
         throw Exception('Gagal menyimpan nota ke Supabase: $e');
       }
     }
 
-    // Fallback ke REST API (Pertemuan 6)
-    try {
-      final response = await _client.post(
-        Uri.parse(_baseUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(receipt.toJson()),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return Receipt.fromJson(responseData);
-      } else {
-        throw Exception(
-          'Gagal menyimpan nota ke server (Status: ${response.statusCode})',
-        );
-      }
-    } catch (e) {
-      throw Exception('Terjadi kesalahan saat mengirim data ke server: $e');
-    }
+    // Fallback ke SQLite lokal
+    return await _dbHelper.insertReceipt(receipt);
   }
 
   /// UPDATE: Mengubah nota di Supabase PostgreSQL (atau fallback SQLite)

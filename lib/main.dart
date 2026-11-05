@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/supabase_constants.dart';
 import 'core/services/notification_service.dart';
-import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,7 @@ void main() async {
     try {
       await Supabase.initialize(
         url: SupabaseConstants.supabaseUrl,
-        publishableKey: SupabaseConstants.supabaseAnonKey,
+        anonKey: SupabaseConstants.supabaseAnonKey,
       );
       debugPrint('Supabase berhasil diinisialisasi.');
     } catch (e) {
@@ -35,24 +35,6 @@ void main() async {
 class App extends StatelessWidget {
   const App({super.key});
 
-  Widget _getInitialScreen() {
-    if (SupabaseConstants.isConfigured) {
-      try {
-        final session = Supabase.instance.client.auth.currentSession;
-        if (session != null) {
-          // Pengguna sudah pernah login: verifikasi biometrik / PIN HP untuk buka cepat
-          return const AuthScreen();
-        } else {
-          // Pengguna belum login: arahkan ke halaman Selamat Datang / Login
-          return const WelcomeScreen();
-        }
-      } catch (_) {
-        return const WelcomeScreen();
-      }
-    }
-    return const AuthScreen();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,9 +42,28 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryBlue),
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryBlue,
+          primary: AppColors.primaryBlue,
+          surface: AppColors.surface,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 3,
+            shadowColor: AppColors.primaryBlue.withValues(alpha: 0.35),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
       ),
-      home: _getInitialScreen(),
+      // Initial route: Splash Screen -> Welcome Screen -> AuthScreen (Login) -> HomeScreen
+      home: const SplashScreen(),
     );
   }
 }

@@ -49,8 +49,8 @@ void main() {
     });
 
     test('3. SupabaseConstants.isConfigured mendeteksi placeholder vs kredensial asli', () {
-      // Saat ini masih berupa placeholder
-      expect(SupabaseConstants.isConfigured, isFalse);
+      // Dengan kredensial asli yang sudah diisi, harus bernilai true
+      expect(SupabaseConstants.isConfigured, isTrue);
     });
   });
 }

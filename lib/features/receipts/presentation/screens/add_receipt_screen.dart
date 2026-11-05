@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -10,6 +9,7 @@ import '../../../../core/services/notification_service.dart';
 import '../../domain/category.dart';
 import '../../domain/receipt.dart';
 import '../controllers/add_receipt_notifier.dart';
+import '../widgets/location_search_sheet.dart';
 
 /// Screen untuk menambahkan atau mengubah nota. Menggunakan ConsumerStatefulWidget
 /// untuk mengelola controller form lokal dan mengakses state Riverpod.
@@ -37,8 +37,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   // State Advanced: Kamera (image_picker)
   bool _isProcessingImage = false;
 
-  // State Advanced: Lokasi (geolocator)
-  bool _isLoadingLocation = false;
+  // State Advanced: Lokasi Toko
   String? _locationError;
 
   @override
@@ -47,7 +46,14 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     if (widget.receiptToEdit != null) {
       final receipt = widget.receiptToEdit!;
       _nameController.text = receipt.productName;
-      _storeController.text = receipt.storeName;
+      // Jika storeName tersimpan dalam format 'Nama Toko (Alamat Lengkap)', pisahkan agar form terisi dengan rapi
+      final match = RegExp(r'^(.*?)\s*\((.+)\)$').firstMatch(receipt.storeName);
+      if (match != null) {
+        _storeController.text = match.group(1)?.trim() ?? receipt.storeName;
+        _addressController.text = match.group(2)?.trim() ?? '';
+      } else {
+        _storeController.text = receipt.storeName;
+      }
       _warrantyController.text = receipt.warrantyMonths.toString();
       _selectedCategory = receipt.category;
       _purchaseDate = receipt.purchaseDate;
@@ -65,7 +71,6 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   }
 
   /// Fitur Kamera (image_picker): Memilih gambar dari Kamera atau Galeri.
-  /// Menampilkan status loading saat memproses, dan menangani pembatalan (cancel).
   Future<void> _pickImage(ImageSource source) async {
     setState(() {
       _isProcessingImage = true;
@@ -88,21 +93,40 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(source == ImageSource.camera
-                ? 'Foto nota berhasil diambil dari kamera!'
-                : 'Foto nota berhasil dipilih dari galeri!'),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(source == ImageSource.camera
+                      ? 'Foto nota berhasil diambil dari kamera!'
+                      : 'Foto nota berhasil dipilih dari galeri!'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             duration: const Duration(seconds: 2),
           ),
         );
       } else {
-        // Pengguna membatalkan proses pemotretan / pemilihan foto
         setState(() {
           _isProcessingImage = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pengambilan foto nota dibatalkan.'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Pengambilan foto nota dibatalkan.'),
+              ],
+            ),
+            backgroundColor: Colors.grey.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -113,112 +137,60 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memproses gambar: $e'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Gagal memproses gambar: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
     }
   }
 
-  /// Fitur Lokasi (geolocator): Mendapatkan koordinat lokasi pengguna secara otomatis.
-  /// Menangani alur perizinan, status GPS aktif/mati, loading, dan pesan error jika ditolak.
-  Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLoadingLocation = true;
-      _locationError = null;
-    });
+  /// Fitur Lokasi: Membuka dialog/sheet pencarian lokasi toko atau mendeteksi alamat via GPS
+  Future<void> _openLocationSearch() async {
+    // Prioritaskan alamat toko jika sudah terisi, atau nama toko sebagai kata kunci awal
+    String? queryToPass;
+    if (_addressController.text.trim().isNotEmpty) {
+      queryToPass = _addressController.text.trim();
+    } else if (_storeController.text.trim().isNotEmpty) {
+      queryToPass = _storeController.text.trim();
+    }
 
-    try {
-      // 1. Cek apakah layanan GPS pada perangkat aktif
-      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _isLoadingLocation = false;
-          _locationError = 'GPS tidak aktif. Harap aktifkan GPS pada perangkat Anda.';
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('GPS tidak aktif. Harap aktifkan GPS perangkat Anda.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
+    final selectedAddress = await LocationSearchSheet.show(
+      context,
+      initialQuery: queryToPass,
+    );
 
-      // 2. Cek dan minta perizinan akses lokasi
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _isLoadingLocation = false;
-            _locationError = 'Izin lokasi ditolak oleh pengguna.';
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Izin akses lokasi ditolak oleh pengguna.'),
-                backgroundColor: Colors.red,
+    if (selectedAddress != null && selectedAddress.trim().isNotEmpty && mounted) {
+      setState(() {
+        _addressController.text = selectedAddress.trim();
+        _locationError = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Alamat toko berhasil dipilih: $selectedAddress'),
               ),
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _isLoadingLocation = false;
-          _locationError = 'Izin lokasi ditolak permanen. Silakan aktifkan via Pengaturan HP.';
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Izin lokasi ditolak permanen. Buka Pengaturan untuk mengaktifkan.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      // 3. Ambil posisi koordinat saat ini
-      final Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        ),
-      );
-
-      if (!mounted) return;
-
-      final formattedAddress =
-          'Koordinat: ${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
-
-      setState(() {
-        _isLoadingLocation = false;
-        _addressController.text = formattedAddress;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lokasi berhasil diambil: $formattedAddress'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingLocation = false;
-        _locationError = 'Gagal mencari koordinat: $e';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mendapatkan lokasi: $e'),
-          backgroundColor: Colors.red,
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -241,15 +213,12 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
   /// Fungsi ini dipanggil ketika user menekan tombol "Simpan Nota".
   Future<void> _onSubmit() async {
-    // Membaca object notifier untuk mengeksekusi logika submitReceipt.
     final notifier = ref.read(addReceiptNotifierProvider.notifier);
     
-    // Gabungkan nama toko dengan alamat/koordinat jika diisi
     final String storeText = _addressController.text.trim().isNotEmpty
         ? '${_storeController.text.trim()} (${_addressController.text.trim()})'
         : _storeController.text.trim();
 
-    // Meneruskan data form dari UI ke layer Notifier/Controller untuk divalidasi dan diproses.
     final success = await notifier.submitReceipt(
       editId: widget.receiptToEdit?.id,
       productName: _nameController.text, 
@@ -262,8 +231,6 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
     if (mounted) {
       if (success) {
-        // Fitur Notifikasi (flutter_local_notifications):
-        // Memicu notifikasi sukses yang muncul di system tray HP setiap kali pengguna selesai/berhasil menyimpan nota baru.
         await NotificationService().showReceiptSavedNotification(
           productName: _nameController.text.trim(),
           storeName: _storeController.text.trim(),
@@ -273,17 +240,43 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.receiptToEdit == null
-                ? 'Nota berhasil disimpan ke Server & Notifikasi terkirim!'
-                : 'Nota berhasil diubah!'),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.receiptToEdit == null
+                        ? 'Nota berhasil disimpan ke Server & Notifikasi terkirim!'
+                        : 'Nota berhasil diubah!',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 3),
           ),
         );
         Navigator.of(context).pop();
       } else {
         final error = ref.read(addReceiptNotifierProvider).validationError;
-        if (error != null && error.startsWith('Gagal menyimpan')) {
+        if (error != null && error.startsWith('Gagal')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error), backgroundColor: Colors.red),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(error)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
       }
@@ -294,7 +287,11 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(addReceiptNotifierProvider);
 
+    // Keyboard-Safe UI: Ambil bottom viewInsets agar input box tidak tertutup keyboard
+    final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.receiptToEdit == null ? 'Tambah Nota' : 'Ubah Nota'),
       ),
@@ -327,11 +324,16 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(addReceiptNotifierProvider.notifier).fetchCategories();
-                    },
-                    child: const Text('Coba Lagi'),
+                  Semantics(
+                    button: true,
+                    label: 'Tombol coba lagi',
+                    hint: 'Ketuk untuk memuat ulang daftar kategori',
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.read(addReceiptNotifierProvider.notifier).fetchCategories();
+                      },
+                      child: const Text('Coba Lagi'),
+                    ),
                   ),
                 ],
               ),
@@ -342,20 +344,25 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
               // KONDISI 3: Empty state
               if (categories.isEmpty) {
                 return const Center(
-                  child: Text(
-                    'Daftar kategori nota kosong. Harap tambahkan kategori pada sistem terlebih dahulu.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Text(
+                      'Daftar kategori nota kosong. Harap tambahkan kategori pada sistem terlebih dahulu.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
                   ),
                 );
               }
               
               // KONDISI 2: Data sukses dimuat (Formulir tampil sempurna)
+              // Keyboard-Safe UI: Bungkus seluruh form input dalam SingleChildScrollView dengan padding keyboard
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
+                      padding: EdgeInsets.only(bottom: keyboardBottomInset),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -391,35 +398,53 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                                         children: [
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(10),
-                                            child: Image.file(
-                                              File(_imagePath!),
-                                              fit: BoxFit.cover,
-                                            ),
+                                            child: _imagePath!.startsWith('http')
+                                                ? Image.network(
+                                                    _imagePath!,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (ctx, error, stackTrace) => const Center(
+                                                      child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                                                    ),
+                                                  )
+                                                : Image.file(
+                                                    File(_imagePath!),
+                                                    fit: BoxFit.cover,
+                                                  ),
                                           ),
                                           Positioned(
                                             bottom: 8,
                                             right: 8,
                                             child: Row(
                                               children: [
-                                                ElevatedButton.icon(
-                                                  onPressed: () => _pickImage(ImageSource.camera),
-                                                  icon: const Icon(Icons.camera_alt, size: 16),
-                                                  label: const Text('Foto Ulang'),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.black.withValues(alpha: 0.7),
-                                                    foregroundColor: Colors.white,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                Semantics(
+                                                  button: true,
+                                                  label: 'Foto ulang nota dengan kamera',
+                                                  hint: 'Ketuk untuk mengambil foto nota baru dari kamera',
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () => _pickImage(ImageSource.camera),
+                                                    icon: const Icon(Icons.camera_alt, size: 16),
+                                                    label: const Text('Foto Ulang'),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.black.withValues(alpha: 0.7),
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                    ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 6),
-                                                ElevatedButton.icon(
-                                                  onPressed: () => _pickImage(ImageSource.gallery),
-                                                  icon: const Icon(Icons.photo_library, size: 16),
-                                                  label: const Text('Galeri'),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.black.withValues(alpha: 0.7),
-                                                    foregroundColor: Colors.white,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                Semantics(
+                                                  button: true,
+                                                  label: 'Pilih foto ulang dari galeri',
+                                                  hint: 'Ketuk untuk memilih foto nota lain dari galeri',
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () => _pickImage(ImageSource.gallery),
+                                                    icon: const Icon(Icons.photo_library, size: 16),
+                                                    label: const Text('Galeri'),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.black.withValues(alpha: 0.7),
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -440,21 +465,31 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              ElevatedButton.icon(
-                                                onPressed: () => _pickImage(ImageSource.camera),
-                                                icon: const Icon(Icons.camera_alt, size: 18),
-                                                label: const Text('Buka Kamera'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: AppColors.primaryBlue,
-                                                  foregroundColor: Colors.white,
-                                                  elevation: 2,
+                                              Semantics(
+                                                button: true,
+                                                label: 'Buka kamera',
+                                                hint: 'Ketuk untuk mengambil foto nota langsung dengan kamera HP',
+                                                child: ElevatedButton.icon(
+                                                  onPressed: () => _pickImage(ImageSource.camera),
+                                                  icon: const Icon(Icons.camera_alt, size: 18),
+                                                  label: const Text('Buka Kamera'),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: AppColors.primaryBlue,
+                                                    foregroundColor: Colors.white,
+                                                    elevation: 2,
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(width: 12),
-                                              OutlinedButton.icon(
-                                                onPressed: () => _pickImage(ImageSource.gallery),
-                                                icon: const Icon(Icons.photo_library, size: 18),
-                                                label: const Text('Dari Galeri'),
+                                              Semantics(
+                                                button: true,
+                                                label: 'Pilih dari galeri',
+                                                hint: 'Ketuk untuk memilih gambar foto nota yang sudah ada di galeri',
+                                                child: OutlinedButton.icon(
+                                                  onPressed: () => _pickImage(ImageSource.gallery),
+                                                  icon: const Icon(Icons.photo_library, size: 18),
+                                                  label: const Text('Dari Galeri'),
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -472,80 +507,92 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           const SizedBox(height: 16),
 
                           // Form Input Nama Barang
-                          TextField(
-                            controller: _nameController,
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: InputDecoration(
-                              labelText: 'Nama Barang',
-                              border: const OutlineInputBorder(),
-                              errorText: state.validationError != null && state.validationError!.contains('Nama barang')
-                                  ? state.validationError
-                                  : null,
+                          Semantics(
+                            textField: true,
+                            label: 'Kolom input nama barang',
+                            hint: 'Ketik nama barang belanjaan Anda',
+                            child: TextField(
+                              controller: _nameController,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Barang',
+                                border: const OutlineInputBorder(),
+                                errorText: state.validationError != null && state.validationError!.contains('Nama barang')
+                                    ? state.validationError
+                                    : null,
+                              ),
+                              onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                             ),
-                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                           ),
                           const SizedBox(height: 16),
                           
                           // Form Input Nama Toko
-                          TextField(
-                            controller: _storeController,
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: InputDecoration(
-                              labelText: 'Nama Toko',
-                              border: const OutlineInputBorder(),
-                              errorText: state.validationError != null && state.validationError!.contains('Nama toko')
-                                  ? state.validationError
-                                  : null,
+                          Semantics(
+                            textField: true,
+                            label: 'Kolom input nama toko',
+                            hint: 'Ketik nama toko tempat pembelian barang',
+                            child: TextField(
+                              controller: _storeController,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Toko',
+                                border: const OutlineInputBorder(),
+                                errorText: state.validationError != null && state.validationError!.contains('Nama toko')
+                                    ? state.validationError
+                                    : null,
+                              ),
+                              onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                             ),
-                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                           ),
                           const SizedBox(height: 16),
 
                           // ===================================================
-                          // Form Lokasi Toko & Tombol Geolocator
+                          // Form Lokasi Toko & Tombol Cari Lokasi Toko
                           // ===================================================
-                          TextField(
-                            controller: _addressController,
-                            decoration: InputDecoration(
-                              labelText: 'Alamat / Koordinat Toko',
-                              hintText: 'Contoh: Jl. Sudirman No. 12 atau Koordinat GPS',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: _addressController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 20),
-                                      onPressed: () {
-                                        setState(() {
-                                          _addressController.clear();
-                                        });
-                                      },
-                                    )
-                                  : null,
+                          Semantics(
+                            textField: true,
+                            label: 'Kolom input alamat toko',
+                            hint: 'Ketik alamat toko atau gunakan tombol cari lokasi toko',
+                            child: TextField(
+                              controller: _addressController,
+                              decoration: InputDecoration(
+                                labelText: 'Alamat Toko',
+                                hintText: 'Contoh: Jl. Jenderal Sudirman No. 12, Jakarta',
+                                border: const OutlineInputBorder(),
+                                suffixIcon: _addressController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, size: 20),
+                                        onPressed: () {
+                                          setState(() {
+                                            _addressController.clear();
+                                          });
+                                        },
+                                      )
+                                    : null,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
 
-                          // Tombol 'Ambil Lokasi Saat Ini'
+                          // Tombol 'Cari Lokasi Toko'
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: OutlinedButton.icon(
-                              onPressed: _isLoadingLocation ? null : _getCurrentLocation,
-                              icon: _isLoadingLocation
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.my_location, size: 18),
-                              label: Text(_isLoadingLocation
-                                  ? 'Mencari Koordinat...'
-                                  : 'Ambil Lokasi Saat Ini'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primaryBlue,
-                                side: const BorderSide(color: AppColors.primaryBlue),
+                            child: Semantics(
+                              button: true,
+                              label: 'Tombol cari lokasi toko',
+                              hint: 'Ketuk untuk mencari alamat lengkap toko atau menggunakan GPS',
+                              child: OutlinedButton.icon(
+                                onPressed: _openLocationSearch,
+                                icon: const Icon(Icons.search_rounded, size: 18),
+                                label: const Text('Cari Lokasi Toko'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primaryBlue,
+                                  side: const BorderSide(color: AppColors.primaryBlue),
+                                ),
                               ),
                             ),
                           ),
@@ -560,63 +607,78 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           const SizedBox(height: 16),
                           
                           // Form Dropdown Kategori
-                          DropdownButtonFormField<Category>(
-                            initialValue: _selectedCategory,
-                            decoration: InputDecoration(
-                              labelText: 'Kategori Nota',
-                              border: const OutlineInputBorder(),
-                              errorText: state.validationError != null && state.validationError!.contains('Kategori')
-                                  ? state.validationError
-                                  : null,
+                          Semantics(
+                            button: true,
+                            label: 'Pilihan kategori nota',
+                            hint: 'Pilih salah satu kategori barang yang cocok',
+                            child: DropdownButtonFormField<Category>(
+                              initialValue: _selectedCategory,
+                              decoration: InputDecoration(
+                                labelText: 'Kategori Nota',
+                                border: const OutlineInputBorder(),
+                                errorText: state.validationError != null && state.validationError!.contains('Kategori')
+                                    ? state.validationError
+                                    : null,
+                              ),
+                              hint: const Text('Pilih Kategori'),
+                              items: categories.map((Category cat) {
+                                return DropdownMenuItem<Category>(
+                                  value: cat,
+                                  child: Text(cat.label),
+                                );
+                              }).toList(),
+                              onChanged: (Category? newValue) {
+                                setState(() {
+                                  _selectedCategory = newValue;
+                                });
+                                ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                              },
                             ),
-                            hint: const Text('Pilih Kategori'),
-                            items: categories.map((Category cat) {
-                              return DropdownMenuItem<Category>(
-                                value: cat,
-                                child: Text(cat.label),
-                              );
-                            }).toList(),
-                            onChanged: (Category? newValue) {
-                              setState(() {
-                                _selectedCategory = newValue;
-                              });
-                              ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
-                            },
                           ),
                           const SizedBox(height: 16),
 
                           // Form Tanggal Beli
-                          InkWell(
-                            onTap: _pickDate,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Tanggal Beli',
-                                border: const OutlineInputBorder(),
-                                errorText: state.validationError != null && state.validationError!.contains('Tanggal beli')
-                                    ? state.validationError
-                                    : null,
-                              ),
-                              child: Text(
-                                _purchaseDate == null
-                                    ? 'Pilih Tanggal'
-                                    : DateFormat('dd MMMM yyyy', 'id_ID').format(_purchaseDate!),
+                          Semantics(
+                            button: true,
+                            label: 'Pilihan tanggal beli',
+                            hint: 'Ketuk untuk membuka pemilih tanggal pembelian',
+                            child: InkWell(
+                              onTap: _pickDate,
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Tanggal Beli',
+                                  border: const OutlineInputBorder(),
+                                  errorText: state.validationError != null && state.validationError!.contains('Tanggal beli')
+                                      ? state.validationError
+                                      : null,
+                                ),
+                                child: Text(
+                                  _purchaseDate == null
+                                      ? 'Pilih Tanggal'
+                                      : DateFormat('dd MMMM yyyy', 'id_ID').format(_purchaseDate!),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
 
                           // Form Durasi Garansi
-                          TextField(
-                            controller: _warrantyController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Durasi Garansi (Bulan)',
-                              border: const OutlineInputBorder(),
-                              errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
-                                  ? state.validationError
-                                  : null,
+                          Semantics(
+                            textField: true,
+                            label: 'Kolom input durasi garansi dalam bulan',
+                            hint: 'Ketik angka lama waktu garansi barang',
+                            child: TextField(
+                              controller: _warrantyController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'Durasi Garansi (Bulan)',
+                                border: const OutlineInputBorder(),
+                                errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
+                                    ? state.validationError
+                                    : null,
+                              ),
+                              onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                             ),
-                            onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
                           ),
                         ],
                       ),
@@ -628,46 +690,31 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                   // ===================================================
                   // KONDISI 6: Loading submit
                   // ===================================================
-                  ElevatedButton(
-                    onPressed: state.isSubmitting ? null : _onSubmit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  Semantics(
+                    button: true,
+                    label: widget.receiptToEdit == null ? 'Tombol simpan nota' : 'Tombol simpan perubahan nota',
+                    hint: 'Ketuk untuk menyimpan data nota ke server cloud',
+                    child: ElevatedButton(
+                      onPressed: state.isSubmitting ? null : _onSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
+                      child: state.isSubmitting 
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(
+                              widget.receiptToEdit == null ? 'Simpan Nota' : 'Simpan Perubahan',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
-                    child: state.isSubmitting 
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : Text(
-                            widget.receiptToEdit == null ? 'Simpan Nota' : 'Simpan Perubahan',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-
-                  // PANEL SIMULASI PENGUJIAN
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const Text('Panel Simulasi Pengujian:', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      TextButton.icon(
-                        icon: const Icon(Icons.error, size: 16),
-                        label: const Text('Test Error'),
-                        onPressed: () => ref.read(addReceiptNotifierProvider.notifier).fetchCategories(simulateError: true),
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.delete_sweep, size: 16),
-                        label: const Text('Test Empty'),
-                        onPressed: () => ref.read(addReceiptNotifierProvider.notifier).fetchCategories(simulateEmpty: true),
-                      ),
-                    ],
                   ),
                 ],
               );
