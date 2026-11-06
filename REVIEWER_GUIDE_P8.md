@@ -37,11 +37,11 @@ Halaman Dashboard (`HomeScreen`) menggunakan widget `LayoutBuilder` untuk mendet
    ```
    *Test case membuktikan rendering GridView pada viewport 800x600 dan ListView pada viewport 400x800.*
 
-```
-================================================================================
-[Sisipkan Screenshot 1 di sini: Tampilan Layar Portrait (List) vs Landscape (Grid)]
-================================================================================
-```
+#### Bukti Implementasi Layout Adaptif:
+| Mode Portrait (ListView 1 Kolom) | Mode Landscape (GridView 2 Kolom) |
+| :---: | :---: |
+| <img src="docs/screenshots/task1_portrait_list.jpg" width="280" alt="Mode Portrait List" /> | <img src="docs/screenshots/task1_landscape_grid.jpg" width="450" alt="Mode Landscape Grid" /> |
+*Gambar 1: Tampilan otomatis beralih dari ListView vertikal 1 kolom (Portrait) menjadi GridView multi-kolom (Landscape).*
 
 ---
 
@@ -65,11 +65,11 @@ Pada SimpanNota:
    - **Hasil yang Diharapkan:** Form dapat di-scroll ke atas secara mulus. Tidak ada garis kuning-hitam (*overflow error*), dan tombol simpan atau kolom input tetap dapat diakses dengan mudah.
 4. Lakukan hal yang sama pada form **Login** dan **Register** di `AuthScreen`.
 
-```
-================================================================================
-[Sisipkan Screenshot 2 di sini: Form Input saat Keyboard Virtual Aktif (Tanpa Overflow)]
-================================================================================
-```
+#### Bukti Implementasi Keyboard-Safe UI:
+<div align="center">
+  <img src="docs/screenshots/task2_keyboard_safe.jpg" width="300" alt="Form Tambah Nota saat Keyboard Virtual Aktif (Bebas Overflow)" />
+  <p><em>Gambar 2: Form Tambah Nota tetap rapi, dapat di-scroll secara mulus, dan bebas dari error yellow-black overflow saat keyboard virtual menutupi layar.</em></p>
+</div>
 
 ---
 
@@ -97,11 +97,11 @@ Untuk mendukung pengguna berkebutuhan khusus yang memanfaatkan pembaca layar (*s
 3. **Automated Accessibility Test:**
    Jalankan `flutter test test/advanced_ui_ux_test.dart` — tes nomor 2 memverifikasi eksistensi widget Semantics pada `ReceiptCard`.
 
-```
-================================================================================
-[Sisipkan Screenshot 3 di sini: Bukti Semantics / TalkBack Inspector / Kode Semantics]
-================================================================================
-```
+#### Bukti Implementasi Aksesibilitas (Semantics):
+<div align="center">
+  <img src="docs/screenshots/task3_semantics_accessibility.jpg" width="600" alt="Kode Semantics pada receipt_card.dart" />
+  <p><em>Gambar 3: Implementasi widget Semantics pada ReceiptCard di receipt_card.dart lengkap dengan label deskriptif, hint tindakan, dan button: true untuk pembaca layar (TalkBack / VoiceOver).</em></p>
+</div>
 
 ---
 
@@ -130,11 +130,11 @@ Aplikasi memberikan umpan balik instan (*visual feedback*) terhadap setiap inter
 4. **Skenario Autentikasi (`LoginScreen` / `RegisterScreen`):**
    - Masukkan akun lalu tekan **Masuk**. Tombol menampilkan animasi spinner sebelum berpindah halaman dengan transisi *fade* yang halus.
 
-```
-================================================================================
-[Sisipkan Screenshot 4 di sini: Animasi Loading Tombol & Tampilan SnackBar Sukses/Error]
-================================================================================
-```
+#### Bukti Implementasi Feedback Aksi:
+<div align="center">
+  <img src="docs/screenshots/task4_action_feedback_snackbar.jpg" width="300" alt="Feedback SnackBar Melayang dan Notifikasi" />
+  <p><em>Gambar 4: Tampilan Floating SnackBar hijau status berhasil dan banner notifikasi saat nota sukses tersimpan ke server.</em></p>
+</div>
 
 ---
 
