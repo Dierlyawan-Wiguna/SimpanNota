@@ -46,13 +46,12 @@ class App extends ConsumerWidget {
       themeMode: themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.light,
         scaffoldBackgroundColor: AppColors.background,
+        cardColor: AppColors.surface,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryBlue,
           primary: AppColors.primaryBlue,
           surface: AppColors.surface,
-          brightness: Brightness.light,
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.primaryBlue,
@@ -60,14 +59,11 @@ class App extends ConsumerWidget {
           elevation: 0,
           centerTitle: false,
         ),
-        cardTheme: const CardTheme(color: AppColors.surface, elevation: 2),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             elevation: 3,
             shadowColor: AppColors.primaryBlue.withValues(alpha: 0.35),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
       ),
@@ -75,6 +71,7 @@ class App extends ConsumerWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+        cardColor: const Color(0xFF1E293B), // Slate 800
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryBlue,
           brightness: Brightness.dark,
@@ -87,27 +84,12 @@ class App extends ConsumerWidget {
           elevation: 0,
           centerTitle: false,
         ),
-        cardTheme: const CardTheme(color: Color(0xFF1E293B), elevation: 2),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2563EB),
             foregroundColor: Colors.white,
             elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFF1E293B),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFF334155)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFF334155)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
       ),

@@ -23,16 +23,17 @@ class NotificationService {
 
     const DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsDarwin,
-      macOS: initializationSettingsDarwin,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsDarwin,
+          macOS: initializationSettingsDarwin,
+        );
 
     try {
       await flutterLocalNotificationsPlugin.initialize(
@@ -55,7 +56,8 @@ class NotificationService {
     try {
       final androidImplementation = flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
       if (androidImplementation != null) {
         return await androidImplementation.requestNotificationsPermission();
@@ -71,15 +73,17 @@ class NotificationService {
     required String storeName,
   }) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'simpan_nota_channel_id',
-        'SimpanNota Notifikasi',
-        channelDescription: 'Notifikasi status berhasil simpan nota belanja',
-        importance: Importance.max,
-        priority: Priority.high,
-        ticker: 'ticker',
-        icon: '@mipmap/ic_launcher',
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'simpan_nota_channel_id',
+            'SimpanNota Notifikasi',
+            channelDescription:
+                'Notifikasi status berhasil simpan nota belanja',
+            importance: Importance.max,
+            priority: Priority.high,
+            ticker: 'ticker',
+            icon: '@mipmap/ic_launcher',
+          );
 
       const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
         presentAlert: true,
@@ -93,7 +97,8 @@ class NotificationService {
         macOS: darwinDetails,
       );
 
-      final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      final int notificationId = DateTime.now().millisecondsSinceEpoch
+          .remainder(100000);
 
       await flutterLocalNotificationsPlugin.show(
         id: notificationId,
@@ -160,10 +165,12 @@ class NotificationService {
 
       final scheduledTZ = tz.TZDateTime.from(reminderDate, tz.local);
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      const AndroidNotificationDetails
+      androidDetails = AndroidNotificationDetails(
         'simpan_nota_reminder_channel',
         'Pengingat Garansi Produk',
-        channelDescription: 'Pemberitahuan terjadwal menjelang masa berlaku garansi nota habis',
+        channelDescription:
+            'Pemberitahuan terjadwal menjelang masa berlaku garansi nota habis',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -192,7 +199,9 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
-      debugPrint('Scheduled notification set for $productName at $scheduledTZ (ID: $notifId)');
+      debugPrint(
+        'Scheduled notification set for $productName at $scheduledTZ (ID: $notifId)',
+      );
     } catch (e) {
       debugPrint('Failed to schedule notification: $e');
     }
