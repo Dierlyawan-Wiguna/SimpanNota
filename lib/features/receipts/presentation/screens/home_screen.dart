@@ -139,7 +139,7 @@ class HomeScreen extends ConsumerWidget {
     final receiptListState = ref.watch(filteredReceiptListProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,29 +158,22 @@ class HomeScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          Semantics(
-            label: 'Profil Pengguna',
-            hint: 'Ketuk untuk melihat informasi profil akun',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.account_circle_outlined, size: 28),
-              tooltip: 'Profil Saya',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  FadePageRoute(page: const ProfileScreen()),
-                );
-              },
-            ),
-          ),
-          Semantics(
-            label: 'Tombol keluar akun',
-            hint: 'Ketuk untuk keluar dari akun SimpanNota',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: 'Keluar',
-              onPressed: () => _confirmSignOut(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Semantics(
+              label: 'Profil Pengguna',
+              hint: 'Ketuk untuk melihat informasi profil, ganti kata sandi, atau keluar akun',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.account_circle_outlined, size: 28),
+                tooltip: 'Profil Saya',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    FadePageRoute(page: const ProfileScreen()),
+                  );
+                },
+              ),
             ),
           ),
         ],

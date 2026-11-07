@@ -20,8 +20,20 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          try {
+            await db.execute('ALTER TABLE receipts ADD COLUMN warrantyDays INTEGER NOT NULL DEFAULT 0');
+          } catch (_) {}
+        }
+      },
+      onOpen: (db) async {
+        try {
+          await db.execute('ALTER TABLE receipts ADD COLUMN warrantyDays INTEGER NOT NULL DEFAULT 0');
+        } catch (_) {}
+      },
     );
   }
 
@@ -34,6 +46,7 @@ CREATE TABLE receipts (
   storeName TEXT NOT NULL,
   purchaseDate TEXT NOT NULL,
   warrantyMonths INTEGER NOT NULL,
+  warrantyDays INTEGER NOT NULL DEFAULT 0,
   imagePath TEXT NOT NULL
 )
 ''');

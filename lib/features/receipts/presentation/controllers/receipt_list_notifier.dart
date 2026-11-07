@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/receipt.dart';
 import '../../services/receipt_repository.dart';
-
+import '../../../../core/services/notification_service.dart';
 import '../../domain/category.dart';
 
 class SearchQueryNotifier extends Notifier<String> {
@@ -59,6 +59,7 @@ class ReceiptListNotifier extends AsyncNotifier<List<Receipt>> {
     try {
       final repository = ref.read(receiptRepositoryProvider);
       await repository.deleteReceipt(id);
+      await NotificationService().cancelNotification(id);
       await loadReceipts(); // refresh list
     } catch (e) {
       // Handle error visually if necessary

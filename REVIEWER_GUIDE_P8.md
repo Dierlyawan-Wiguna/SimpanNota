@@ -159,5 +159,32 @@ No issues found!
 ```
 
 ---
+
+## 6. Fitur Baru Unggulan (Pembaruan Terkini)
+
+### A. Pilihan Waktu Garansi Fleksibel (Bulan / Hari / Bulan + Hari)
+- **Lokasi Kode:** `lib/features/receipts/presentation/screens/add_receipt_screen.dart`, `lib/features/receipts/domain/receipt.dart`
+- **Fitur:** Pengguna dapat memilih format masa berlaku garansi dalam 3 pilihan melalui chip selector:
+  1. **Bulan Saja:** contoh `12 Bulan`.
+  2. **Hari Saja:** contoh `15 Hari`.
+  3. **Bulan + Hari:** contoh `1 Bulan 15 Hari`.
+- **Live Preview:** Terdapat kartu kalkulasi otomatis yang menampilkan estimasi durasi dan tanggal jatuh tempo kedaluwarsa secara *real-time* saat pengguna mengisi angka.
+- **Penyimpanan:** Kolom `warrantyMonths` dan `warrantyDays` terintegrasi pada SQLite lokal serta fallback sinkronisasi Supabase Cloud.
+
+### B. Jadwal Pengingat Notifikasi Garansi (Scheduled Notification)
+- **Lokasi Kode:** `lib/core/services/notification_service.dart`, `lib/features/receipts/presentation/controllers/add_receipt_notifier.dart`, `android/app/src/main/AndroidManifest.xml`
+- **Fitur:** Menggunakan `flutter_local_notifications` dan `timezone` dengan mode `zonedSchedule`:
+  - Sistem secara otomatis menghitung H-7 sebelum masa garansi nota habis dan menjadwalkan alarm notifikasi pukul 09:00 pagi.
+  - Untuk produk dengan garansi singkat (< 7 hari), sistem otomatis menyesuaikan pengingat ke H-1 pukul 09:00 pagi.
+  - Saat nota dihapus oleh pengguna, sistem secara otomatis membatalkan (*cancel*) jadwal notifikasi pengingat tersebut agar tidak terjadi notifikasi hantu (*phantom notifications*).
+
+### C. Mode Gelap (Dark Mode) & Pengaturan Tema
+- **Lokasi Kode:** `lib/core/theme/theme_provider.dart`, `lib/main.dart`, `lib/features/profile/presentation/screens/profile_screen.dart`
+- **Fitur:** 
+  - Dukungan tema gelap modern dengan palet warna Slate Navy (`#0F172A`), Slate Surface (`#1E293B`), dan Card Border (`#334155`).
+  - Pengguna dapat beralih antara Mode Terang dan Mode Gelap melalui Switch adaptif pada halaman **Profil Saya** (`ProfileScreen`).
+  - Seluruh komponen (Dashboard, Kartu Nota, Detail Nota, Profil) beradaptasi secara elegan terhadap tema yang aktif.
+
+---
 *Dokumen ini dibuat secara resmi untuk dokumentasi Praktikum 8 mata kuliah Pemrograman Perangkat Bergerak / Mobile App Development.*
 

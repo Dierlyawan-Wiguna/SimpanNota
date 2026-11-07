@@ -8,6 +8,7 @@ class Receipt {
   final String storeName;
   final DateTime purchaseDate;
   final int warrantyMonths;
+  final int warrantyDays;
   final String imagePath;
 
   Receipt({
@@ -17,12 +18,25 @@ class Receipt {
     required this.storeName,
     required this.purchaseDate,
     required this.warrantyMonths,
+    this.warrantyDays = 0,
     required this.imagePath,
   });
 
+  /// Menghitung tanggal kedaluwarsa secara presisi berdasarkan kombinasi bulan dan hari
+  DateTime get expirationDate {
+    final withMonths = DateTime(
+      purchaseDate.year,
+      purchaseDate.month + warrantyMonths,
+      purchaseDate.day,
+      purchaseDate.hour,
+      purchaseDate.minute,
+    );
+    return withMonths.add(Duration(days: warrantyDays));
+  }
+
+  /// Status garansi dihitung dari tanggal kedaluwarsa presisi
   WarrantyStatus get status {
     final now = DateTime.now();
-    final expirationDate = purchaseDate.add(Duration(days: warrantyMonths * 30));
     final daysLeft = expirationDate.difference(now).inDays;
 
     if (daysLeft < 0) {
@@ -34,6 +48,17 @@ class Receipt {
     }
   }
 
+  /// Menghasilkan label teks durasi garansi yang rapi (contoh: '1 Bulan 15 Hari' atau '15 Hari' atau '12 Bulan')
+  String get warrantyDurationLabel {
+    if (warrantyMonths > 0 && warrantyDays > 0) {
+      return '$warrantyMonths Bulan $warrantyDays Hari';
+    } else if (warrantyMonths > 0) {
+      return '$warrantyMonths Bulan';
+    } else {
+      return '$warrantyDays Hari';
+    }
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -42,6 +67,7 @@ class Receipt {
       'storeName': storeName,
       'purchaseDate': purchaseDate.toIso8601String(),
       'warrantyMonths': warrantyMonths,
+      'warrantyDays': warrantyDays,
       'imagePath': imagePath,
     };
   }
@@ -56,7 +82,8 @@ class Receipt {
       ),
       storeName: map['storeName'] as String,
       purchaseDate: DateTime.parse(map['purchaseDate'] as String),
-      warrantyMonths: map['warrantyMonths'] as int,
+      warrantyMonths: map['warrantyMonths'] as int? ?? 0,
+      warrantyDays: map['warrantyDays'] as int? ?? 0,
       imagePath: map['imagePath'] as String,
     );
   }
@@ -70,8 +97,8 @@ class Receipt {
       'storeName': storeName,
       'purchaseDate': purchaseDate.toIso8601String(),
       'warrantyMonths': warrantyMonths,
+      'warrantyDays': warrantyDays,
       'imagePath': imagePath,
-      // Dukungan sementara untuk jsonplaceholder
       'title': productName,
       'body': storeName,
       'userId': 1,
@@ -79,24 +106,26 @@ class Receipt {
   }
 
   // Supabase PostgreSQL mapping: toSupabaseMap
-  Map<String, dynamic> toSupabaseMap() {
+  Map<String, dynamic> toSupabaseMap({bool includeDays = true}) {
     return {
       if (id != null) 'id': id,
       'product_name': productName,
       'category': category.name.toLowerCase(),
       'store_name': storeName,
       'purchase_date': purchaseDate.toIso8601String().split('T').first,
-      'warranty_months': warrantyMonths,
+      'warranty_months': warrantyMonths > 0 ? warrantyMonths : 1,
+      if (includeDays && warrantyDays > 0) 'warranty_days': warrantyDays,
       'image_path': imagePath,
     };
   }
 
-  // API Integration: fromJson dengan exception handling & multi-format (camelCase & snake_case)
+  // API Integration: fromJson dengan exception handling & multi-format
   factory Receipt.fromJson(Map<String, dynamic> json) {
     try {
       final rawCategory = (json['category'] ?? '').toString().toLowerCase();
       final dateRaw = json['purchase_date'] ?? json['purchaseDate'];
       final monthsRaw = json['warranty_months'] ?? json['warrantyMonths'];
+      final daysRaw = json['warranty_days'] ?? json['warrantyDays'];
       final imageRaw = json['image_path'] ?? json['imagePath'] ?? '';
 
       return Receipt(
@@ -113,6 +142,9 @@ class Receipt {
         warrantyMonths: monthsRaw != null 
             ? int.tryParse(monthsRaw.toString()) ?? 0
             : 0,
+        warrantyDays: daysRaw != null
+            ? int.tryParse(daysRaw.toString()) ?? 0
+            : 0,
         imagePath: imageRaw.toString(),
       );
     } catch (e) {
@@ -127,6 +159,7 @@ class Receipt {
     String? storeName,
     DateTime? purchaseDate,
     int? warrantyMonths,
+    int? warrantyDays,
     String? imagePath,
   }) {
     return Receipt(
@@ -136,6 +169,7 @@ class Receipt {
       storeName: storeName ?? this.storeName,
       purchaseDate: purchaseDate ?? this.purchaseDate,
       warrantyMonths: warrantyMonths ?? this.warrantyMonths,
+      warrantyDays: warrantyDays ?? this.warrantyDays,
       imagePath: imagePath ?? this.imagePath,
     );
   }

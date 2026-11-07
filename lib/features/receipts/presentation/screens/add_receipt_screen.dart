@@ -27,7 +27,11 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _storeController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _warrantyController = TextEditingController();
+  final TextEditingController _warrantyMonthsController = TextEditingController();
+  final TextEditingController _warrantyDaysController = TextEditingController();
+  
+  // Format durasi garansi: 0 = Bulan Saja, 1 = Hari Saja, 2 = Bulan + Hari
+  int _warrantyTypeIndex = 0;
   
   // State lokal UI
   Category? _selectedCategory;
@@ -54,7 +58,21 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       } else {
         _storeController.text = receipt.storeName;
       }
-      _warrantyController.text = receipt.warrantyMonths.toString();
+      
+      final m = receipt.warrantyMonths;
+      final d = receipt.warrantyDays;
+      if (m > 0 && d > 0) {
+        _warrantyTypeIndex = 2; // Bulan + Hari
+        _warrantyMonthsController.text = m.toString();
+        _warrantyDaysController.text = d.toString();
+      } else if (d > 0 && m == 0) {
+        _warrantyTypeIndex = 1; // Hari Saja
+        _warrantyDaysController.text = d.toString();
+      } else {
+        _warrantyTypeIndex = 0; // Bulan Saja
+        _warrantyMonthsController.text = m > 0 ? m.toString() : '';
+      }
+      
       _selectedCategory = receipt.category;
       _purchaseDate = receipt.purchaseDate;
       _imagePath = receipt.imagePath;
@@ -66,8 +84,42 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     _nameController.dispose();
     _storeController.dispose();
     _addressController.dispose();
-    _warrantyController.dispose();
+    _warrantyMonthsController.dispose();
+    _warrantyDaysController.dispose();
     super.dispose();
+  }
+
+  DateTime? _calculateExpirationPreview() {
+    final base = _purchaseDate ?? DateTime.now();
+    int m = 0;
+    int d = 0;
+    if (_warrantyTypeIndex == 0) {
+      m = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+    } else if (_warrantyTypeIndex == 1) {
+      d = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    } else {
+      m = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+      d = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    }
+    if (m == 0 && d == 0) return null;
+    return DateTime(base.year, base.month + m, base.day).add(Duration(days: d));
+  }
+
+  String _getWarrantyDurationSummary() {
+    int m = 0;
+    int d = 0;
+    if (_warrantyTypeIndex == 0) {
+      m = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+    } else if (_warrantyTypeIndex == 1) {
+      d = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    } else {
+      m = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+      d = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    }
+    if (m > 0 && d > 0) return '$m Bulan $d Hari';
+    if (m > 0) return '$m Bulan';
+    if (d > 0) return '$d Hari';
+    return '-';
   }
 
   /// Fitur Kamera (image_picker): Memilih gambar dari Kamera atau Galeri.
@@ -211,6 +263,41 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     }
   }
 
+  Widget _buildWarrantyTypeChip({required int index, required String label}) {
+    final isSelected = _warrantyTypeIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _warrantyTypeIndex = index;
+          });
+          ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryBlue : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryBlue : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Fungsi ini dipanggil ketika user menekan tombol "Simpan Nota".
   Future<void> _onSubmit() async {
     final notifier = ref.read(addReceiptNotifierProvider.notifier);
@@ -219,18 +306,30 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         ? '${_storeController.text.trim()} (${_addressController.text.trim()})'
         : _storeController.text.trim();
 
-    final success = await notifier.submitReceipt(
+    int months = 0;
+    int days = 0;
+    if (_warrantyTypeIndex == 0) {
+      months = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+    } else if (_warrantyTypeIndex == 1) {
+      days = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    } else {
+      months = int.tryParse(_warrantyMonthsController.text.trim()) ?? 0;
+      days = int.tryParse(_warrantyDaysController.text.trim()) ?? 0;
+    }
+
+    final savedReceipt = await notifier.submitReceipt(
       editId: widget.receiptToEdit?.id,
       productName: _nameController.text, 
       selectedCategory: _selectedCategory,
       storeName: storeText,
       purchaseDate: _purchaseDate,
-      warrantyMonths: _warrantyController.text,
+      warrantyMonths: months,
+      warrantyDays: days,
       imagePath: _imagePath,
     );
 
     if (mounted) {
-      if (success) {
+      if (savedReceipt != null) {
         await NotificationService().showReceiptSavedNotification(
           productName: _nameController.text.trim(),
           storeName: _storeController.text.trim(),
@@ -662,23 +761,157 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Form Durasi Garansi
-                          Semantics(
-                            textField: true,
-                            label: 'Kolom input durasi garansi dalam bulan',
-                            hint: 'Ketik angka lama waktu garansi barang',
-                            child: TextField(
-                              controller: _warrantyController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Durasi Garansi (Bulan)',
-                                border: const OutlineInputBorder(),
-                                errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
-                                    ? state.validationError
-                                    : null,
+                          // Pilihan Format Durasi Garansi (Bulan / Hari / Bulan + Hari)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.verified_user_outlined, size: 18, color: AppColors.primaryBlue),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Pilihan Waktu Garansi',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              onChanged: (_) => ref.read(addReceiptNotifierProvider.notifier).clearValidationError(),
-                            ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  _buildWarrantyTypeChip(index: 0, label: 'Bulan'),
+                                  const SizedBox(width: 8),
+                                  _buildWarrantyTypeChip(index: 1, label: 'Hari'),
+                                  const SizedBox(width: 8),
+                                  _buildWarrantyTypeChip(index: 2, label: 'Bulan + Hari'),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Form Input Durasi Sesuai Pilihan
+                              if (_warrantyTypeIndex == 0)
+                                Semantics(
+                                  textField: true,
+                                  label: 'Kolom input durasi garansi dalam bulan',
+                                  hint: 'Ketik angka durasi garansi dalam hitungan bulan',
+                                  child: TextField(
+                                    controller: _warrantyMonthsController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'Durasi Garansi',
+                                      suffixText: 'Bulan',
+                                      border: const OutlineInputBorder(),
+                                      errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
+                                          ? state.validationError
+                                          : null,
+                                    ),
+                                    onChanged: (_) {
+                                      setState(() {});
+                                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                                    },
+                                  ),
+                                )
+                              else if (_warrantyTypeIndex == 1)
+                                Semantics(
+                                  textField: true,
+                                  label: 'Kolom input durasi garansi dalam hari',
+                                  hint: 'Ketik angka durasi garansi dalam hitungan hari',
+                                  child: TextField(
+                                    controller: _warrantyDaysController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'Durasi Garansi',
+                                      suffixText: 'Hari',
+                                      border: const OutlineInputBorder(),
+                                      errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
+                                          ? state.validationError
+                                          : null,
+                                    ),
+                                    onChanged: (_) {
+                                      setState(() {});
+                                      ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                                    },
+                                  ),
+                                )
+                              else
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Semantics(
+                                        textField: true,
+                                        label: 'Kolom durasi bulan garansi',
+                                        child: TextField(
+                                          controller: _warrantyMonthsController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            labelText: 'Bulan',
+                                            suffixText: 'Bln',
+                                            border: const OutlineInputBorder(),
+                                            errorText: state.validationError != null && state.validationError!.contains('Durasi garansi')
+                                                ? state.validationError
+                                                : null,
+                                          ),
+                                          onChanged: (_) {
+                                            setState(() {});
+                                            ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Semantics(
+                                        textField: true,
+                                        label: 'Kolom durasi hari garansi',
+                                        child: TextField(
+                                          controller: _warrantyDaysController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(
+                                            labelText: 'Hari',
+                                            suffixText: 'Hari',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                          onChanged: (_) {
+                                            setState(() {});
+                                            ref.read(addReceiptNotifierProvider.notifier).clearValidationError();
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                              // Live Preview Kartu Masa Berlaku Garansi
+                              if (_calculateExpirationPreview() != null)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 10),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.blue.shade200),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.verified_rounded, color: AppColors.primaryBlue, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Garansi: ${_getWarrantyDurationSummary()} (Berakhir ${DateFormat('dd MMMM yyyy', 'id_ID').format(_calculateExpirationPreview()!)})',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primaryBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),

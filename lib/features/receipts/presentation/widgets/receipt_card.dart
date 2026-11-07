@@ -22,15 +22,20 @@ class ReceiptCard extends StatelessWidget {
     final statusBg = _getStatusBgColor(receipt.status);
 
     return Semantics(
-      label: 'Nota untuk ${receipt.productName}, toko ${receipt.storeName}, masa garansi ${receipt.warrantyMonths} bulan, status ${receipt.status.label}',
+      label: 'Nota untuk ${receipt.productName}, toko ${receipt.storeName}, masa garansi ${receipt.warrantyDurationLabel}, status ${receipt.status.label}',
       hint: 'Ketuk untuk melihat detail nota dan dokumen klaim garansi',
       button: true,
       child: Container(
         margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardTheme.color ?? AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder, width: 1),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF334155)
+                : AppColors.cardBorder,
+            width: 1,
+          ),
           boxShadow: const [
             BoxShadow(
               color: AppColors.shadowColor,
@@ -83,10 +88,12 @@ class ReceiptCard extends StatelessWidget {
                       children: [
                         Text(
                           receipt.productName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
-                            color: AppColors.textDark,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : AppColors.textDark,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 1,
@@ -104,8 +111,10 @@ class ReceiptCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 receipt.storeName,
-                                style: const TextStyle(
-                                  color: AppColors.textGrey,
+                                style: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF94A3B8)
+                                      : AppColors.textGrey,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),

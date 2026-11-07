@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -553,30 +554,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     if (SupabaseConstants.isConfigured) {
       try {
-        _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-          final AuthChangeEvent event = data.event;
-          if (event == AuthChangeEvent.signedIn && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Login Google berhasil! Selamat datang.'),
-                  ],
-                ),
-                backgroundColor: Colors.green.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-            Navigator.pushAndRemoveUntil(
-              context,
-              FadePageRoute(page: const HomeScreen()),
-              (route) => false,
-            );
-          }
-        });
+        _authSubscription = Supabase.instance.client.auth.onAuthStateChange
+            .listen((data) {
+              final AuthChangeEvent event = data.event;
+              if (event == AuthChangeEvent.signedIn && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('Login Google berhasil! Selamat datang.'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade600,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  FadePageRoute(page: const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            });
       } catch (_) {}
     }
   }
@@ -764,13 +768,17 @@ class _LoginScreenState extends State<LoginScreen> {
               Icon(Icons.warning_amber_rounded, color: Colors.white),
               SizedBox(width: 8),
               Expanded(
-                child: Text('Supabase belum dikonfigurasi. Periksa supabase_constants.dart.'),
+                child: Text(
+                  'Supabase belum dikonfigurasi. Periksa supabase_constants.dart.',
+                ),
               ),
             ],
           ),
           backgroundColor: Colors.orange.shade800,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       return;
@@ -798,7 +806,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -856,7 +866,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Text(
                     'Masukkan email akun SimpanNota Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textGrey, height: 1.4),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textGrey,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -865,22 +879,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     autofocus: resetEmailController.text.isEmpty,
                     decoration: InputDecoration(
                       labelText: 'Alamat Email',
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryBlue),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: AppColors.primaryBlue,
+                      ),
                       filled: true,
                       fillColor: AppColors.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderSide: const BorderSide(
+                          color: AppColors.cardBorder,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderSide: const BorderSide(
+                          color: AppColors.cardBorder,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                   if (dialogError != null)
@@ -888,7 +915,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         dialogError!,
-                        style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                 ],
@@ -896,10 +926,15 @@ class _LoginScreenState extends State<LoginScreen> {
               actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               actions: [
                 TextButton(
-                  onPressed: isSending ? null : () => Navigator.pop(dialogContext),
+                  onPressed: isSending
+                      ? null
+                      : () => Navigator.pop(dialogContext),
                   child: const Text(
                     'Batal',
-                    style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppColors.textGrey,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 ElevatedButton(
@@ -921,10 +956,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           try {
                             if (SupabaseConstants.isConfigured) {
-                              await Supabase.instance.client.auth.resetPasswordForEmail(
-                                email,
-                                redirectTo: kIsWeb ? null : 'io.supabase.simpannota://login-callback',
-                              );
+                              await Supabase.instance.client.auth
+                                  .resetPasswordForEmail(
+                                    email,
+                                    redirectTo: kIsWeb ? null : 'io.supabase.simpannota://login-callback',
+                                  );
                             }
 
                             if (mounted) {
@@ -933,16 +969,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 SnackBar(
                                   content: Row(
                                     children: [
-                                      const Icon(Icons.mark_email_read_rounded, color: Colors.white),
+                                      const Icon(
+                                        Icons.mark_email_read_rounded,
+                                        color: Colors.white,
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                        child: Text('Tautan reset password telah dikirim ke $email. Periksa kotak masuk/spam.'),
+                                        child: Text(
+                                          'Tautan reset password telah dikirim ke $email. Periksa kotak masuk/spam.',
+                                        ),
                                       ),
                                     ],
                                   ),
                                   backgroundColor: Colors.green.shade600,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                   duration: const Duration(seconds: 4),
                                 ),
                               );
@@ -957,14 +1000,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
                   ),
                   child: isSending
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text(
                           'Kirim Tautan',
@@ -991,7 +1042,8 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         leading: Semantics(
           button: true,
-          label: 'Kembali ke halaman sebelumnya',
+          label: 'Kembali ke halaman awal',
+          hint: 'Ketuk untuk kembali ke halaman selamat datang',
           child: const BackButton(color: AppColors.textDark),
         ),
       ),
@@ -1143,7 +1195,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextButton(
                     onPressed: _showForgotPasswordDialog,
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -1228,7 +1283,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _isLoading ? null : _handleGoogleLogin,
                     style: OutlinedButton.styleFrom(
                       backgroundColor: AppColors.surface,
-                      side: const BorderSide(color: AppColors.cardBorder, width: 1.2),
+                      side: const BorderSide(
+                        color: AppColors.cardBorder,
+                        width: 1.2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1240,11 +1298,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           'assets/images/google_logo.png',
                           width: 22,
                           height: 22,
-                          errorBuilder: (context, error, stackTrace) => Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
-                            width: 22,
-                            height: 22,
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.network(
+                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
+                                width: 22,
+                                height: 22,
+                              ),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -1269,7 +1328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   hint: 'Ketuk untuk berpindah ke halaman pendaftaran',
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         FadePageRoute(page: const RegisterScreen()),
                       );
@@ -1287,9 +1346,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 28),
 
               // Tombol Customer Service: "Butuh Bantuan?"
-              const Center(
-                child: CustomerServiceButton(),
-              ),
+              const Center(child: CustomerServiceButton()),
               const SizedBox(height: 24),
             ],
           ),
@@ -1323,30 +1380,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.initState();
     if (SupabaseConstants.isConfigured) {
       try {
-        _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-          final AuthChangeEvent event = data.event;
-          if (event == AuthChangeEvent.signedIn && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Registrasi Google berhasil! Selamat datang.'),
-                  ],
-                ),
-                backgroundColor: Colors.green.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-            Navigator.pushAndRemoveUntil(
-              context,
-              FadePageRoute(page: const HomeScreen()),
-              (route) => false,
-            );
-          }
-        });
+        _authSubscription = Supabase.instance.client.auth.onAuthStateChange
+            .listen((data) {
+              final AuthChangeEvent event = data.event;
+              if (event == AuthChangeEvent.signedIn && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('Registrasi Google berhasil! Selamat datang.'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade600,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  FadePageRoute(page: const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            });
       } catch (_) {}
     }
   }
@@ -1474,7 +1534,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 8),
-              Expanded(child: Text('Akun telah dibuat. Silakan masuk ke akun Anda.')),
+              Expanded(
+                child: Text('Akun telah dibuat. Silakan masuk ke akun Anda.'),
+              ),
             ],
           ),
           backgroundColor: Colors.green.shade600,
@@ -1510,7 +1572,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 8),
-                Expanded(child: Text('Akun telah dibuat. Silakan masuk ke akun Anda.')),
+                Expanded(
+                  child: Text('Akun telah dibuat. Silakan masuk ke akun Anda.'),
+                ),
               ],
             ),
             backgroundColor: Colors.green.shade600,
@@ -1592,13 +1656,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Icon(Icons.warning_amber_rounded, color: Colors.white),
               SizedBox(width: 8),
               Expanded(
-                child: Text('Supabase belum dikonfigurasi. Periksa supabase_constants.dart.'),
+                child: Text(
+                  'Supabase belum dikonfigurasi. Periksa supabase_constants.dart.',
+                ),
               ),
             ],
           ),
           backgroundColor: Colors.orange.shade800,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       return;
@@ -1626,7 +1694,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -1638,32 +1708,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Semantics(
-          button: true,
-          label: 'Kembali ke halaman sebelumnya',
-          child: const BackButton(color: AppColors.textDark),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            24.0,
-            24.0,
-            24.0,
-            24.0 + keyboardBottomInset,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.pushReplacement(
+          context,
+          FadePageRoute(page: const LoginScreen()),
+        );
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Semantics(
+            button: true,
+            label: 'Kembali ke halaman login',
+            hint: 'Ketuk untuk kembali ke halaman masuk akun',
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  FadePageRoute(page: const LoginScreen()),
+                );
+              },
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 10),
-              const Text(
-                'Buat Akun Baru',
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24.0,
+              24.0,
+              24.0,
+              24.0 + keyboardBottomInset,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  'Buat Akun Baru',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 30,
@@ -1966,7 +2054,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: _isLoading ? null : _handleGoogleLogin,
                     style: OutlinedButton.styleFrom(
                       backgroundColor: AppColors.surface,
-                      side: const BorderSide(color: AppColors.cardBorder, width: 1.2),
+                      side: const BorderSide(
+                        color: AppColors.cardBorder,
+                        width: 1.2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1978,11 +2069,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'assets/images/google_logo.png',
                           width: 22,
                           height: 22,
-                          errorBuilder: (context, error, stackTrace) => Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
-                            width: 22,
-                            height: 22,
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.network(
+                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
+                                width: 22,
+                                height: 22,
+                              ),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -2027,6 +2119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

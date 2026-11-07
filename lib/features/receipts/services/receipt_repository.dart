@@ -117,6 +117,7 @@ class ReceiptRepository {
     required String namaToko,
     required DateTime tanggalBeli,
     required int durasiGaransiBulan,
+    int durasiGaransiHari = 0,
     required String fotoPath,
   }) async {
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
@@ -127,24 +128,39 @@ class ReceiptRepository {
       storeName: namaToko,
       purchaseDate: tanggalBeli,
       warrantyMonths: durasiGaransiBulan,
+      warrantyDays: durasiGaransiHari,
       imagePath: resolvedImagePath,
     );
 
     final sb = _supabase;
     if (sb != null) {
       try {
-        final map = receipt.toSupabaseMap();
         final currentUserId = sb.auth.currentUser?.id;
+        final map = receipt.toSupabaseMap(includeDays: true);
         if (currentUserId != null) {
           map['user_id'] = currentUserId;
         }
 
-        final response = await sb
-            .from('receipts')
-            .insert(map)
-            .select()
-            .single();
-        return Receipt.fromJson(response);
+        try {
+          final response = await sb
+              .from('receipts')
+              .insert(map)
+              .select()
+              .single();
+          return Receipt.fromJson(response);
+        } catch (_) {
+          // Fallback jika tabel remote Supabase belum ada kolom warranty_days
+          final fallbackMap = receipt.toSupabaseMap(includeDays: false);
+          if (currentUserId != null) {
+            fallbackMap['user_id'] = currentUserId;
+          }
+          final response = await sb
+              .from('receipts')
+              .insert(fallbackMap)
+              .select()
+              .single();
+          return Receipt.fromJson(response);
+        }
       } catch (e) {
         // Jika Supabase gagal, simpan ke database lokal agar data user tidak hilang
         try {
@@ -166,6 +182,7 @@ class ReceiptRepository {
     required String namaToko,
     required DateTime tanggalBeli,
     required int durasiGaransiBulan,
+    int durasiGaransiHari = 0,
     required String fotoPath,
   }) async {
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
@@ -177,23 +194,37 @@ class ReceiptRepository {
       storeName: namaToko,
       purchaseDate: tanggalBeli,
       warrantyMonths: durasiGaransiBulan,
+      warrantyDays: durasiGaransiHari,
       imagePath: resolvedImagePath,
     );
 
     final sb = _supabase;
     if (sb != null) {
       try {
-        final map = receipt.toSupabaseMap();
         final currentUserId = sb.auth.currentUser?.id;
+        final map = receipt.toSupabaseMap(includeDays: true);
         if (currentUserId != null) {
           map['user_id'] = currentUserId;
         }
 
-        await sb
-            .from('receipts')
-            .update(map)
-            .eq('id', id);
-        return 1;
+        try {
+          await sb
+              .from('receipts')
+              .update(map)
+              .eq('id', id);
+          return 1;
+        } catch (_) {
+          // Fallback jika remote Supabase belum ada kolom warranty_days
+          final fallbackMap = receipt.toSupabaseMap(includeDays: false);
+          if (currentUserId != null) {
+            fallbackMap['user_id'] = currentUserId;
+          }
+          await sb
+              .from('receipts')
+              .update(fallbackMap)
+              .eq('id', id);
+          return 1;
+        }
       } catch (e) {
         throw Exception('Gagal memperbarui nota di Supabase: $e');
       }

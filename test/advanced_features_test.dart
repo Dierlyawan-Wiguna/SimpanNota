@@ -13,7 +13,10 @@ class MockReceiptRepository extends ReceiptRepository {
   MockReceiptRepository() : super(DatabaseHelper.instance);
 
   @override
-  Future<List<Category>> fetchCategories({bool simulateError = false, bool simulateEmpty = false}) async {
+  Future<List<Category>> fetchCategories({
+    bool simulateError = false,
+    bool simulateEmpty = false,
+  }) async {
     return Category.values;
   }
 
@@ -24,6 +27,7 @@ class MockReceiptRepository extends ReceiptRepository {
     required String namaToko,
     required DateTime tanggalBeli,
     required int durasiGaransiBulan,
+    int durasiGaransiHari = 0,
     required String fotoPath,
   }) async {
     return Receipt(
@@ -33,6 +37,7 @@ class MockReceiptRepository extends ReceiptRepository {
       storeName: namaToko,
       purchaseDate: tanggalBeli,
       warrantyMonths: durasiGaransiBulan,
+      warrantyDays: durasiGaransiHari,
       imagePath: fotoPath,
     );
   }
@@ -42,48 +47,53 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Advanced Features - Unit & Widget Tests', () {
-    test('1. NotificationService: Singleton instance and initialization check', () {
-      final service1 = NotificationService();
-      final service2 = NotificationService();
-      expect(identical(service1, service2), isTrue);
-    });
+    test(
+      '1. NotificationService: Singleton instance and initialization check',
+      () {
+        final service1 = NotificationService();
+        final service2 = NotificationService();
+        expect(identical(service1, service2), isTrue);
+      },
+    );
 
-    testWidgets('2. AuthScreen: Tampilan elemen autentikasi biometrik & tombol pemindaian', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: AuthScreen(),
-        ),
-      );
+    testWidgets(
+      '2. AuthScreen: Tampilan elemen autentikasi biometrik & tombol pemindaian',
+      (tester) async {
+        await tester.pumpWidget(const MaterialApp(home: AuthScreen()));
 
-      // Pastikan icon fingerprint, judul, dan tombol autentikasi tersedia
-      expect(find.byIcon(Icons.fingerprint_rounded), findsOneWidget);
-      expect(find.text('Autentikasi Keamanan'), findsOneWidget);
-      expect(find.textContaining('Pindai Biometrik / PIN'), findsOneWidget);
-      expect(find.text('Ganti Akun / Halaman Login'), findsOneWidget);
-    });
+        // Pastikan icon fingerprint, judul, dan tombol autentikasi tersedia
+        expect(find.byIcon(Icons.fingerprint_rounded), findsOneWidget);
+        expect(find.text('Autentikasi Keamanan'), findsOneWidget);
+        expect(find.textContaining('Pindai Biometrik / PIN'), findsOneWidget);
+        expect(find.text('Ganti Akun / Halaman Login'), findsOneWidget);
+      },
+    );
 
-    testWidgets('3. AddReceiptScreen: Tombol Kamera dan Ambil Lokasi Saat Ini tersedia pada form', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            receiptRepositoryProvider.overrideWithValue(MockReceiptRepository()),
-          ],
-          child: const MaterialApp(
-            home: AddReceiptScreen(),
+    testWidgets(
+      '3. AddReceiptScreen: Tombol Kamera dan Ambil Lokasi Saat Ini tersedia pada form',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              receiptRepositoryProvider.overrideWithValue(
+                MockReceiptRepository(),
+              ),
+            ],
+            child: const MaterialApp(home: AddReceiptScreen()),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // Pastikan tombol Kamera dan Galeri tersedia
-      expect(find.text('Buka Kamera'), findsOneWidget);
-      expect(find.text('Dari Galeri'), findsOneWidget);
+        // Pastikan tombol Kamera dan Galeri tersedia
+        expect(find.text('Buka Kamera'), findsOneWidget);
+        expect(find.text('Dari Galeri'), findsOneWidget);
 
-      // Pastikan field dan tombol Geolocator Lokasi tersedia
-      expect(find.text('Alamat / Koordinat Toko'), findsOneWidget);
-      expect(find.text('Ambil Lokasi Saat Ini'), findsOneWidget);
-      expect(find.byIcon(Icons.my_location), findsOneWidget);
-    });
+        // Pastikan field dan tombol Lokasi Toko tersedia
+        expect(find.text('Alamat Toko'), findsOneWidget);
+        expect(find.text('Cari Lokasi Toko'), findsOneWidget);
+        expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+      },
+    );
   });
 }

@@ -1,22 +1,27 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   User? _currentUser;
-  bool _isLoading = false;
+  String? _localAvatarPath;
 
   @override
   void initState() {
@@ -54,7 +59,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getPhoneNumber() {
     if (_currentUser == null) return '-';
-    // Cek kolom phone resmi auth atau di userMetadata
     final phone = _currentUser!.phone;
     if (phone != null && phone.isNotEmpty) return phone;
     final metaPhone = _currentUser!.userMetadata?['phone'];
@@ -85,6 +89,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'Email & Kata Sandi';
   }
 
+  String? _getAvatarUrl() {
+    if (_localAvatarPath != null) return _localAvatarPath;
+    if (_currentUser == null) return null;
+    final metadata = _currentUser!.userMetadata;
+    final avatar = metadata?['avatar_url'] ?? metadata?['picture'];
+    if (avatar != null && avatar.toString().trim().isNotEmpty) {
+      return avatar.toString().trim();
+    }
+    return null;
+  }
+
   String _getInitials(String name) {
     final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return 'U';
@@ -92,11 +107,346 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
+  /// Task 4: Pilih Foto Profil Asli (Kamera atau Galeri)
+  Future<void> _pickAvatarImage() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Ubah Foto Profil',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlue,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryBlue),
+                ),
+                title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Gunakan kamera ponsel untuk swafoto langsung', style: TextStyle(fontSize: 12)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlue,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primaryBlue),
+                ),
+                title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Pilih foto yang sudah ada di penyimpanan ponsel', style: TextStyle(fontSize: 12)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              if (_getAvatarUrl() != null)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                  ),
+                  title: const Text('Hapus Foto Profil', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
+                  subtitle: const Text('Gunakan inisial nama sebagai avatar bawaan', style: TextStyle(fontSize: 12)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _localAvatarPath = null;
+                    });
+                    if (SupabaseConstants.isConfigured && _currentUser != null) {
+                      final updatedData = Map<String, dynamic>.from(_currentUser!.userMetadata ?? {});
+                      updatedData.remove('avatar_url');
+                      await Supabase.instance.client.auth.updateUser(UserAttributes(data: updatedData));
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source != null) {
+      try {
+        final picked = await picker.pickImage(
+          source: source,
+          maxWidth: 600,
+          maxHeight: 600,
+          imageQuality: 85,
+        );
+        if (picked != null) {
+          setState(() {
+            _localAvatarPath = picked.path;
+          });
+
+          if (SupabaseConstants.isConfigured && _currentUser != null) {
+            final updatedData = Map<String, dynamic>.from(_currentUser!.userMetadata ?? {});
+            updatedData['avatar_url'] = picked.path;
+            await Supabase.instance.client.auth.updateUser(UserAttributes(data: updatedData));
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Foto profil berhasil diperbarui!'),
+                  ],
+                ),
+                backgroundColor: Colors.green.shade600,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memilih foto: $e'),
+              backgroundColor: Colors.red.shade600,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Task 3: Ubah Kata Sandi (Change Password)
+  Future<void> _changePasswordDialog() async {
+    final passController = TextEditingController();
+    final confirmPassController = TextEditingController();
+    bool isObscure = true;
+    bool isSaving = false;
+    String? dialogError;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightBlue,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Ubah Kata Sandi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Masukkan kata sandi baru untuk akun Anda (minimal 6 karakter).',
+                      style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Kata Sandi Baru',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: passController,
+                      obscureText: isObscure,
+                      decoration: InputDecoration(
+                        hintText: 'Minimal 6 karakter',
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            isObscure ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () => setDialogState(() => isObscure = !isObscure),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.cardBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.cardBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Konfirmasi Kata Sandi Baru',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: confirmPassController,
+                      obscureText: isObscure,
+                      decoration: InputDecoration(
+                        hintText: 'Ulangi kata sandi baru',
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.cardBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.cardBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    if (dialogError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Text(
+                          dialogError!,
+                          style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
+                  child: const Text('Batal', style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.w600)),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final newPass = passController.text;
+                          final confirmPass = confirmPassController.text;
+                          if (newPass.length < 6) {
+                            setDialogState(() => dialogError = 'Kata sandi minimal 6 karakter.');
+                            return;
+                          }
+                          if (newPass != confirmPass) {
+                            setDialogState(() => dialogError = 'Konfirmasi kata sandi tidak cocok.');
+                            return;
+                          }
+                          setDialogState(() {
+                            isSaving = true;
+                            dialogError = null;
+                          });
+
+                          try {
+                            if (SupabaseConstants.isConfigured) {
+                              await Supabase.instance.client.auth.updateUser(
+                                UserAttributes(password: newPass),
+                              );
+                            }
+                            if (mounted) {
+                              Navigator.pop(dialogCtx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle_outline, color: Colors.white),
+                                      SizedBox(width: 8),
+                                      Expanded(child: Text('Kata sandi berhasil diperbarui!')),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green.shade600,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() {
+                              isSaving = false;
+                              dialogError = 'Gagal mengubah kata sandi: $e';
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Simpan'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _editProfileDialog() async {
     final nameController = TextEditingController(text: _getDisplayName());
     String currentPhone = _getPhoneNumber();
     if (currentPhone == '-') currentPhone = '';
-    // Hapus awalan +62 jika ada untuk memudahkan input user
     if (currentPhone.startsWith('+62')) {
       currentPhone = currentPhone.substring(3);
     } else if (currentPhone.startsWith('62')) {
@@ -249,7 +599,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             return;
                           }
 
-                          // Bersihkan nomor telepon
                           rawPhone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
                           if (rawPhone.startsWith('0')) {
                             rawPhone = rawPhone.substring(1);
@@ -370,9 +719,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final regDate = _getFormattedRegistrationDate();
     final provider = _getProviderName();
     final initials = _getInitials(displayName);
+    final avatarUrl = _getAvatarUrl();
+    final isEmailProvider = !provider.contains('Google');
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Profil Saya',
@@ -423,31 +776,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  // Avatar Circle dengan inisial
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  // Avatar Circle dengan opsi ganti foto (Task 4)
+                  Stack(
+                    children: [
+                      Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryBlue,
+                        child: ClipOval(
+                          child: avatarUrl != null
+                              ? (avatarUrl.startsWith('http')
+                                  ? Image.network(
+                                      avatarUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(
+                                          initials,
+                                          style: const TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppColors.primaryBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Image.file(
+                                      File(avatarUrl),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(
+                                          initials,
+                                          style: const TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppColors.primaryBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ))
+                              : Center(
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Material(
+                          color: AppColors.primaryBlue,
+                          shape: const CircleBorder(
+                            side: BorderSide(color: Colors.white, width: 2),
+                          ),
+                          elevation: 3,
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _pickAvatarImage,
+                            child: const Padding(
+                              padding: EdgeInsets.all(7),
+                              child: Icon(
+                                Icons.camera_alt_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -506,9 +919,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Card Informasi Detail Pengguna
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.cardBorder),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                ),
                 boxShadow: const [
                   BoxShadow(
                     color: AppColors.shadowColor,
@@ -526,13 +941,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
-                  const Divider(height: 1, indent: 56, endIndent: 16),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                   _buildProfileTile(
                     icon: Icons.email_rounded,
                     label: 'Email Terdaftar',
                     value: email,
                   ),
-                  const Divider(height: 1, indent: 56, endIndent: 16),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                   _buildProfileTile(
                     icon: Icons.phone_rounded,
                     label: 'Nomor Telepon',
@@ -540,13 +955,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
-                  const Divider(height: 1, indent: 56, endIndent: 16),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                   _buildProfileTile(
                     icon: Icons.calendar_today_rounded,
                     label: 'Tanggal Mendaftar',
                     value: regDate,
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Card Pengaturan Preferensi Tema (Mode Gelap)
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.shadowColor,
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: isDark ? Colors.amber : AppColors.primaryBlue,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mode Gelap (Dark Mode)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isDark
+                                ? 'Tampilan gelap nyaman untuk mata'
+                                : 'Tampilan terang default',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: ref.watch(themeModeProvider) == ThemeMode.dark,
+                      activeColor: const Color(0xFF38BDF8),
+                      onChanged: (val) {
+                        ref.read(themeModeProvider.notifier).setTheme(
+                              val ? ThemeMode.dark : ThemeMode.light,
+                            );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -594,26 +1083,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-            // Tombol Edit Profil
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: _editProfileDialog,
-                icon: const Icon(Icons.edit_note_rounded, size: 20),
-                label: const Text(
-                  'Ubah Profil & Nomor Telepon',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryBlue,
-                  side: const BorderSide(color: AppColors.primaryBlue, width: 1.3),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            // Task 3: Tombol Ubah Kata Sandi (jika bukan akun Google)
+            if (isEmailProvider) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _changePasswordDialog,
+                  icon: const Icon(Icons.lock_reset_rounded, size: 20),
+                  label: const Text(
+                    'Ubah Kata Sandi',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryNavy,
+                    side: const BorderSide(color: AppColors.cardBorder, width: 1.3),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ],
 
             // Tombol Keluar Akun
             SizedBox(
@@ -650,6 +1140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool showEditHint = false,
     VoidCallback? onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -660,10 +1151,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.lightBlue,
+                color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: AppColors.primaryBlue, size: 20),
+              child: Icon(
+                icon,
+                color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -672,10 +1167,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textGrey,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -684,16 +1179,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: value == '-' ? AppColors.textGrey : AppColors.textDark,
+                      color: value == '-'
+                          ? AppColors.textGrey
+                          : (isDark ? Colors.white : AppColors.textDark),
                     ),
                   ),
                 ],
               ),
             ),
             if (showEditHint)
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textGrey,
+                color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                 size: 20,
               ),
           ],
@@ -702,4 +1199,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
 import '../../domain/warranty_status.dart';
 import '../../domain/receipt.dart';
@@ -21,7 +24,10 @@ class ReceiptDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Detail Nota'),
         backgroundColor: AppColors.primaryBlue,
@@ -220,10 +226,10 @@ class ReceiptDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     receipt.productName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: isDark ? Colors.white : AppColors.textDark,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -239,9 +245,9 @@ class ReceiptDetailScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           receipt.storeName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
-                            color: AppColors.textBody,
+                            color: isDark ? const Color(0xFFCBD5E1) : AppColors.textBody,
                             fontWeight: FontWeight.w500,
                             height: 1.3,
                           ),
@@ -291,9 +297,11 @@ class ReceiptDetailScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.cardBorder),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                      ),
                       boxShadow: const [
                         BoxShadow(
                           color: AppColors.shadowColor,
@@ -304,26 +312,105 @@ class ReceiptDetailScreen extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        _buildDetailRow('Kategori', receipt.category.label),
-                        const Divider(height: 20, color: AppColors.cardBorder),
+                        _buildDetailRow(context, 'Kategori', receipt.category.label),
+                        Divider(height: 20, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                         _buildDetailRow(
+                          context,
                           'Tanggal Beli',
                           DateFormat(
                             'dd MMMM yyyy',
                             'id_ID',
                           ).format(receipt.purchaseDate),
                         ),
-                        const Divider(height: 20, color: AppColors.cardBorder),
+                        Divider(height: 20, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                         _buildDetailRow(
+                          context,
                           'Durasi Garansi',
-                          '${receipt.warrantyMonths} Bulan',
+                          receipt.warrantyDurationLabel,
                         ),
-                        const Divider(height: 20, color: AppColors.cardBorder),
+                        Divider(height: 20, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                         _buildDetailRow(
+                          context,
                           'Tanggal Kedaluwarsa',
                           DateFormat('dd MMMM yyyy', 'id_ID').format(
-                            receipt.purchaseDate.add(
-                              Duration(days: receipt.warrantyMonths * 30),
+                            receipt.expirationDate,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Task 5: Kartu Pengingat Garansi WhatsApp Otomatis
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.green.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withValues(alpha: 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF25D366),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.chat_rounded, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pengingat Garansi WhatsApp',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF075E54),
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Kirim rincian masa aktif garansi barang ini langsung ke WhatsApp.',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.3),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _sendWhatsAppReminder(context),
+                            icon: const Icon(Icons.send_rounded, size: 18),
+                            label: const Text(
+                              'Kirim Pengingat ke WhatsApp',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              foregroundColor: Colors.white,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -337,6 +424,85 @@ class ReceiptDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _sendWhatsAppReminder(BuildContext context) async {
+    String? userPhone;
+    String userName = 'Pengguna SimpanNota';
+
+    if (SupabaseConstants.isConfigured) {
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          final meta = user.userMetadata;
+          final name = meta?['full_name'] ?? meta?['name'];
+          if (name != null && name.toString().isNotEmpty) {
+            userName = name.toString();
+          }
+          final phone = user.phone ?? meta?['phone'];
+          if (phone != null && phone.toString().isNotEmpty) {
+            userPhone = phone.toString().replaceAll(RegExp(r'[^0-9]'), '');
+          }
+        }
+      } catch (_) {}
+    }
+
+    final expiredDate = receipt.expirationDate;
+    final daysLeft = expiredDate.difference(DateTime.now()).inDays;
+    final formattedBuyDate = DateFormat('dd MMMM yyyy', 'id_ID').format(receipt.purchaseDate);
+    final formattedExpDate = DateFormat('dd MMMM yyyy', 'id_ID').format(expiredDate);
+
+    String statusText;
+    if (daysLeft < 0) {
+      statusText = '❌ KEDALUWARSA (Telah berakhir ${-daysLeft} hari lalu)';
+    } else if (daysLeft <= 30) {
+      statusText = '⚠️ SEGERA BERAKHIR ($daysLeft hari lagi tersisa!)';
+    } else {
+      statusText = '✅ AKTIF ($daysLeft hari lagi tersisa)';
+    }
+
+    final message = '''
+🔔 *PENGINGAT MASA GARANSI SIMPANNOTA*
+
+Halo *$userName*,
+Berikut adalah pengingat status masa garansi barang Anda:
+
+📦 *Barang:* ${receipt.productName}
+🏪 *Toko:* ${receipt.storeName}
+🏷️ *Kategori:* ${receipt.category.label}
+📅 *Tanggal Beli:* $formattedBuyDate
+⏳ *Durasi Garansi:* ${receipt.warrantyDurationLabel}
+🛑 *Jatuh Tempo:* $formattedExpDate
+📊 *Status Garansi:* $statusText
+
+_Pesan ini dikirimkan otomatis melalui aplikasi SimpanNota untuk mengamankan bukti klaim garansi Anda._'''.trim();
+
+    final encoded = Uri.encodeComponent(message);
+    Uri waUri;
+
+    if (userPhone != null && userPhone.isNotEmpty) {
+      waUri = Uri.parse('https://wa.me/$userPhone?text=$encoded');
+    } else {
+      waUri = Uri.parse('https://api.whatsapp.com/send?text=$encoded');
+    }
+
+    try {
+      final canLaunch = await canLaunchUrl(waUri);
+      if (canLaunch) {
+        await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(waUri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka WhatsApp: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
   }
 
   Color _getStatusColor(WarrantyStatus status) {
@@ -361,7 +527,8 @@ class ReceiptDetailScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
@@ -369,8 +536,8 @@ class ReceiptDetailScreen extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textGrey,
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -380,10 +547,10 @@ class ReceiptDetailScreen extends ConsumerWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: AppColors.textDark,
+                color: isDark ? Colors.white : AppColors.textDark,
               ),
             ),
           ),

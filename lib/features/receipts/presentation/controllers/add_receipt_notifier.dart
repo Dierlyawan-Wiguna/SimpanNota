@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/category.dart';
+import '../../domain/receipt.dart';
 import '../../services/receipt_repository.dart';
+import '../../../../core/services/notification_service.dart';
 
 import 'receipt_list_notifier.dart';
 
@@ -83,45 +85,46 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
   }
 
   /// Fungsi untuk memvalidasi dan menyimpan data formulir input Nota Baru.
-  /// Mengembalikan true apabila proses simpan berjalan sukses, atau false jika validasi gagal.
-  Future<bool> submitReceipt({
+  /// Mengembalikan Receipt apabila proses simpan berjalan sukses, atau null jika validasi gagal.
+  Future<Receipt?> submitReceipt({
     int? editId,
     required String productName,
     required Category? selectedCategory,
     required String storeName,
     required DateTime? purchaseDate,
-    required String warrantyMonths,
+    required int warrantyMonths,
+    required int warrantyDays,
     required String? imagePath,
   }) async {
     // 5. Validasi Form
     if (productName.trim().isEmpty) {
       state = state.copyWith(validationError: 'Nama barang tidak boleh kosong.');
-      return false;
+      return null;
     }
     
     if (selectedCategory == null) {
       state = state.copyWith(validationError: 'Kategori harus dipilih terlebih dahulu.');
-      return false;
+      return null;
     }
 
     if (storeName.trim().isEmpty) {
       state = state.copyWith(validationError: 'Nama toko tidak boleh kosong.');
-      return false;
+      return null;
     }
 
     if (purchaseDate == null) {
       state = state.copyWith(validationError: 'Tanggal beli harus diisi.');
-      return false;
+      return null;
     }
 
-    if (warrantyMonths.trim().isEmpty || int.tryParse(warrantyMonths.trim()) == null) {
-      state = state.copyWith(validationError: 'Durasi garansi (bulan) tidak valid.');
-      return false;
+    if (warrantyMonths <= 0 && warrantyDays <= 0) {
+      state = state.copyWith(validationError: 'Durasi garansi (bulan/hari) tidak boleh kosong atau 0.');
+      return null;
     }
 
     if (imagePath == null || imagePath.isEmpty) {
       state = state.copyWith(validationError: 'Foto nota harus dilampirkan.');
-      return false;
+      return null;
     }
 
     // Jika semua validasi lolos, bersihkan error sebelumnya.
@@ -134,6 +137,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
     try {
       final repository = ref.read(receiptRepositoryProvider);
       
+      Receipt savedReceipt;
       if (editId != null) {
         // Lakukan proses update data
         await repository.updateReceipt(
@@ -142,34 +146,56 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
           kategori: selectedCategory,
           namaToko: storeName,
           tanggalBeli: purchaseDate,
-          durasiGaransiBulan: int.parse(warrantyMonths.trim()),
+          durasiGaransiBulan: warrantyMonths,
+          durasiGaransiHari: warrantyDays,
           fotoPath: imagePath,
+        );
+        savedReceipt = Receipt(
+          id: editId,
+          productName: productName,
+          category: selectedCategory,
+          storeName: storeName,
+          purchaseDate: purchaseDate,
+          warrantyMonths: warrantyMonths,
+          warrantyDays: warrantyDays,
+          imagePath: imagePath,
         );
       } else {
         // Lakukan proses simpan data baru
-        await repository.saveReceipt(
+        savedReceipt = await repository.saveReceipt(
           namaBarang: productName,
           kategori: selectedCategory,
           namaToko: storeName,
           tanggalBeli: purchaseDate,
-          durasiGaransiBulan: int.parse(warrantyMonths.trim()),
+          durasiGaransiBulan: warrantyMonths,
+          durasiGaransiHari: warrantyDays,
           fotoPath: imagePath,
         );
       }
       
+      // Jadwalkan pengingat garansi otomatis (H-7 / H-1)
+      if (savedReceipt.id != null) {
+        await NotificationService().scheduleWarrantyExpiryNotification(
+          receiptId: savedReceipt.id!,
+          productName: savedReceipt.productName,
+          storeName: savedReceipt.storeName,
+          expirationDate: savedReceipt.expirationDate,
+        );
+      }
+
       // Refresh list nota di halaman depan
       ref.read(receiptListProvider.notifier).loadReceipts();
 
       // Setelah sukses disimpan, setel kembali isSubmitting.
       state = state.copyWith(isSubmitting: false);
-      return true; // Menandakan bahwa proses submit sukses dan UI bisa bernavigasi/keluar (Pop screen).
+      return savedReceipt;
     } catch (e) {
       // Jika terjadi error dari layer network saat menyimpan, tampilkan error validasi (untuk di-handle oleh UI).
       state = state.copyWith(
         isSubmitting: false,
         validationError: 'Gagal menyimpan nota: $e'
       );
-      return false;
+      return null;
     }
   }
   
