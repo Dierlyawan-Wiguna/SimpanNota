@@ -185,6 +185,28 @@ No issues found!
   - Pengguna dapat beralih antara Mode Terang dan Mode Gelap melalui Switch adaptif pada halaman **Profil Saya** (`ProfileScreen`).
   - Seluruh komponen (Dashboard, Kartu Nota, Detail Nota, Profil) beradaptasi secara elegan terhadap tema yang aktif.
 
+### D. Filter Urutan Nota (Sorting Dashboard)
+- **Lokasi Kode:** `lib/features/receipts/presentation/controllers/receipt_list_notifier.dart`, `lib/features/receipts/presentation/screens/home_screen.dart`
+- **Fitur:**
+  - Tombol pengurutan responsif di samping bilah pencarian *Dashboard* dengan ikon filter slider modern (`Icons.tune_rounded`).
+  - Menawarkan 4 kriteria pengurutan nota secara instan dengan ikon representatif masing-masing:
+    1. **Garansi Segera Habis:** Mengutamakan nota dengan tanggal jatuh tempo terdekat di bagian atas agar pengguna tidak kecolongan klaim garansi.
+    2. **Tanggal Beli (Terbaru):** Urutan kronologis pembelian barang terkini (default).
+    3. **Tanggal Beli (Terlama):** Mengurutkan dari barang yang paling lama dibeli.
+    4. **Nama Barang (A - Z):** Mengurutkan secara alfabetis berdasarkan nama barang belanjaan.
+
+### E. Multi-Lampiran (Foto Struk Nota + Foto Kartu Garansi Fisik)
+- **Lokasi Kode:** `lib/features/receipts/domain/receipt.dart`, `lib/features/receipts/presentation/screens/add_receipt_screen.dart`, `lib/features/receipts/presentation/screens/receipt_detail_screen.dart`, `lib/core/local/database_helper.dart`
+- **Fitur:**
+  - Pengguna dapat melampirkan hingga 2 dokumen foto:
+    1. **Foto Struk / Nota Kasir (Wajib):** Bukti sah transaksi pembayaran.
+    2. **Foto Kartu Garansi Fisik (Opsional):** Bukti nomor seri IMEI, barcode pabrikan, atau kartu garansi bertanda cap toko.
+  - **Pratinjau Multi-Lampiran di Halaman Detail:**
+    - Tampilan *Detail Nota* secara cerdas menyediakan tab toggle melayang (*pill switch*): **[Foto Nota]** dan **[Kartu Garansi]**.
+    - Didukung fitur pembesaran gambar (*Pinch-to-Zoom / InteractiveViewer*).
+    - Tombol download dapat menyimpan gambar nota maupun kartu garansi yang sedang aktif ke galeri penyimpanan HP secara terpisah.
+  - **Sinkronisasi Data:** Tersimpan pada database lokal SQLite (`warrantyCardPath`) dan Supabase Cloud Storage (`warranty_card_path`).
+
 ---
 *Dokumen ini dibuat secara resmi untuk dokumentasi Praktikum 8 mata kuliah Pemrograman Perangkat Bergerak / Mobile App Development.*
 

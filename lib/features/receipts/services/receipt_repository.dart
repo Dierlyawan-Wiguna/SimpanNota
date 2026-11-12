@@ -119,8 +119,12 @@ class ReceiptRepository {
     required int durasiGaransiBulan,
     int durasiGaransiHari = 0,
     required String fotoPath,
+    String? fotoKartuGaransiPath,
   }) async {
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
+    final resolvedCardPath = fotoKartuGaransiPath != null && fotoKartuGaransiPath.isNotEmpty
+        ? await uploadImageIfNeeded(fotoKartuGaransiPath)
+        : null;
 
     final receipt = Receipt(
       productName: namaBarang,
@@ -130,13 +134,14 @@ class ReceiptRepository {
       warrantyMonths: durasiGaransiBulan,
       warrantyDays: durasiGaransiHari,
       imagePath: resolvedImagePath,
+      warrantyCardPath: resolvedCardPath,
     );
 
     final sb = _supabase;
     if (sb != null) {
       try {
         final currentUserId = sb.auth.currentUser?.id;
-        final map = receipt.toSupabaseMap(includeDays: true);
+        final map = receipt.toSupabaseMap(includeDays: true, includeWarrantyCard: true);
         if (currentUserId != null) {
           map['user_id'] = currentUserId;
         }
@@ -149,8 +154,8 @@ class ReceiptRepository {
               .single();
           return Receipt.fromJson(response);
         } catch (_) {
-          // Fallback jika tabel remote Supabase belum ada kolom warranty_days
-          final fallbackMap = receipt.toSupabaseMap(includeDays: false);
+          // Fallback jika tabel remote Supabase belum ada kolom warranty_days / warranty_card_path
+          final fallbackMap = receipt.toSupabaseMap(includeDays: false, includeWarrantyCard: false);
           if (currentUserId != null) {
             fallbackMap['user_id'] = currentUserId;
           }
@@ -184,8 +189,12 @@ class ReceiptRepository {
     required int durasiGaransiBulan,
     int durasiGaransiHari = 0,
     required String fotoPath,
+    String? fotoKartuGaransiPath,
   }) async {
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
+    final resolvedCardPath = fotoKartuGaransiPath != null && fotoKartuGaransiPath.isNotEmpty
+        ? await uploadImageIfNeeded(fotoKartuGaransiPath)
+        : null;
 
     final receipt = Receipt(
       id: id,
@@ -196,13 +205,14 @@ class ReceiptRepository {
       warrantyMonths: durasiGaransiBulan,
       warrantyDays: durasiGaransiHari,
       imagePath: resolvedImagePath,
+      warrantyCardPath: resolvedCardPath,
     );
 
     final sb = _supabase;
     if (sb != null) {
       try {
         final currentUserId = sb.auth.currentUser?.id;
-        final map = receipt.toSupabaseMap(includeDays: true);
+        final map = receipt.toSupabaseMap(includeDays: true, includeWarrantyCard: true);
         if (currentUserId != null) {
           map['user_id'] = currentUserId;
         }
@@ -214,8 +224,8 @@ class ReceiptRepository {
               .eq('id', id);
           return 1;
         } catch (_) {
-          // Fallback jika remote Supabase belum ada kolom warranty_days
-          final fallbackMap = receipt.toSupabaseMap(includeDays: false);
+          // Fallback jika remote Supabase belum ada kolom warranty_days / warranty_card_path
+          final fallbackMap = receipt.toSupabaseMap(includeDays: false, includeWarrantyCard: false);
           if (currentUserId != null) {
             fallbackMap['user_id'] = currentUserId;
           }

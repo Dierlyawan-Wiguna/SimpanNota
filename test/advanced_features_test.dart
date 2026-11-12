@@ -29,6 +29,7 @@ class MockReceiptRepository extends ReceiptRepository {
     required int durasiGaransiBulan,
     int durasiGaransiHari = 0,
     required String fotoPath,
+    String? fotoKartuGaransiPath,
   }) async {
     return Receipt(
       id: 99,
@@ -39,6 +40,7 @@ class MockReceiptRepository extends ReceiptRepository {
       warrantyMonths: durasiGaransiBulan,
       warrantyDays: durasiGaransiHari,
       imagePath: fotoPath,
+      warrantyCardPath: fotoKartuGaransiPath,
     );
   }
 }

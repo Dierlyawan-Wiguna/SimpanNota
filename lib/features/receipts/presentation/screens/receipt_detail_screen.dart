@@ -17,14 +17,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/receipt_list_notifier.dart';
 import 'add_receipt_screen.dart';
 
-class ReceiptDetailScreen extends ConsumerWidget {
+class ReceiptDetailScreen extends ConsumerStatefulWidget {
   final Receipt receipt;
 
   const ReceiptDetailScreen({super.key, required this.receipt});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReceiptDetailScreen> createState() => _ReceiptDetailScreenState();
+}
+
+class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
+  int _selectedImageIndex = 0; // 0: Foto Nota, 1: Foto Kartu Garansi
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Sinkronisasi data nota jika baru saja diedit
+    final receipt = ref.watch(receiptListProvider).maybeWhen(
+      data: (list) => list.firstWhere(
+        (r) => r.id == widget.receipt.id,
+        orElse: () => widget.receipt,
+      ),
+      orElse: () => widget.receipt,
+    );
+
+    final hasWarrantyCard = receipt.warrantyCardPath != null &&
+        receipt.warrantyCardPath!.trim().isNotEmpty;
+    final activeIndex = hasWarrantyCard ? _selectedImageIndex : 0;
+    final currentImagePath =
+        activeIndex == 0 ? receipt.imagePath : receipt.warrantyCardPath!;
+    final isCurrentWarrantyCard = activeIndex == 1;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -122,17 +145,18 @@ class ReceiptDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              height: 250,
-              color: Colors.grey.shade300,
+              height: 260,
+              color: Colors.grey.shade900,
               child: Stack(
                 children: [
                   Positioned.fill(
                     child: InteractiveViewer(
+                      key: ValueKey(currentImagePath),
                       child: Center(
-                        child: receipt.imagePath.startsWith('http')
+                        child: currentImagePath.startsWith('http')
                             ? Image.network(
-                                receipt.imagePath,
-                                fit: BoxFit.cover,
+                                currentImagePath,
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 errorBuilder: (context, error, stackTrace) =>
                                     const Icon(
@@ -142,8 +166,8 @@ class ReceiptDetailScreen extends ConsumerWidget {
                                 ),
                               )
                             : Image.file(
-                                File(receipt.imagePath),
-                                fit: BoxFit.cover,
+                                File(currentImagePath),
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 errorBuilder: (context, error, stackTrace) =>
                                     const Icon(
@@ -155,6 +179,89 @@ class ReceiptDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+
+                  // Pill Toggle Selector jika memiliki 2 lampiran (Foto Nota & Kartu Garansi Fisik)
+                  if (hasWarrantyCard)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      right: 12,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () => setState(() => _selectedImageIndex = 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: activeIndex == 0 ? AppColors.primaryBlue : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.receipt_long_rounded,
+                                        size: 14,
+                                        color: activeIndex == 0 ? Colors.white : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Foto Nota',
+                                        style: TextStyle(
+                                          color: activeIndex == 0 ? Colors.white : Colors.white70,
+                                          fontSize: 12,
+                                          fontWeight: activeIndex == 0 ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _selectedImageIndex = 1),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: activeIndex == 1 ? AppColors.primaryBlue : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.verified_user_rounded,
+                                        size: 14,
+                                        color: activeIndex == 1 ? Colors.white : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Kartu Garansi',
+                                        style: TextStyle(
+                                          color: activeIndex == 1 ? Colors.white : Colors.white70,
+                                          fontSize: 12,
+                                          fontWeight: activeIndex == 1 ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Tombol Download ke Galeri
                   Positioned(
                     bottom: 8,
                     right: 8,
@@ -162,8 +269,8 @@ class ReceiptDetailScreen extends ConsumerWidget {
                       backgroundColor: Colors.black54,
                       child: Semantics(
                         button: true,
-                        label: 'Unduh foto nota ke galeri',
-                        hint: 'Ketuk untuk menyimpan file foto nota ke galeri foto perangkat',
+                        label: 'Unduh foto ke galeri',
+                        hint: 'Ketuk untuk menyimpan foto ke galeri foto perangkat',
                         child: IconButton(
                           icon: const Icon(Icons.download, color: Colors.white),
                           onPressed: () async {
@@ -173,16 +280,18 @@ class ReceiptDetailScreen extends ConsumerWidget {
                                 await Gal.requestAccess();
                               }
 
-                              await Gal.putImage(receipt.imagePath);
+                              await Gal.putImage(currentImagePath);
 
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: const Row(
+                                    content: Row(
                                       children: [
-                                        Icon(Icons.check_circle, color: Colors.white),
-                                        SizedBox(width: 8),
-                                        Text('Foto berhasil disimpan ke Galeri!'),
+                                        const Icon(Icons.check_circle, color: Colors.white),
+                                        const SizedBox(width: 8),
+                                        Text(isCurrentWarrantyCard
+                                            ? 'Foto kartu garansi berhasil disimpan ke Galeri!'
+                                            : 'Foto nota berhasil disimpan ke Galeri!'),
                                       ],
                                     ),
                                     backgroundColor: Colors.green.shade600,
@@ -336,6 +445,12 @@ class ReceiptDetailScreen extends ConsumerWidget {
                             receipt.expirationDate,
                           ),
                         ),
+                        Divider(height: 20, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                        _buildDetailRow(
+                          context,
+                          'Kartu Garansi Fisik',
+                          hasWarrantyCard ? 'Terlampir (Ketuk tab di atas)' : 'Tidak Ada',
+                        ),
                       ],
                     ),
                   ),
@@ -398,7 +513,7 @@ class ReceiptDetailScreen extends ConsumerWidget {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton.icon(
-                            onPressed: () => _sendWhatsAppReminder(context),
+                            onPressed: () => _sendWhatsAppReminder(context, receipt),
                             icon: const Icon(Icons.send_rounded, size: 18),
                             label: const Text(
                               'Kirim Pengingat ke WhatsApp',
@@ -426,7 +541,7 @@ class ReceiptDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _sendWhatsAppReminder(BuildContext context) async {
+  Future<void> _sendWhatsAppReminder(BuildContext context, Receipt receipt) async {
     String? userPhone;
     String userName = 'Pengguna SimpanNota';
 

@@ -182,36 +182,132 @@ class HomeScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 10.0),
-            child: Semantics(
-              label: 'Kolom pencarian nota',
-              hint: 'Ketik nama barang atau toko untuk memfilter daftar nota',
-              textField: true,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.cardBorder),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.shadowColor,
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    label: 'Kolom pencarian nota',
+                    hint: 'Ketik nama barang atau toko untuk memfilter daftar nota',
+                    textField: true,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF334155)
+                              : AppColors.cardBorder,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadowColor,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Cari barang atau toko...',
+                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                          prefixIcon: Icon(Icons.search_rounded, color: AppColors.textGrey),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        onChanged: (value) {
+                          ref.read(searchQueryProvider.notifier).update(value);
+                        },
+                      ),
                     ),
-                  ],
-                ),
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Cari barang atau toko...',
-                    hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.textGrey),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
-                  onChanged: (value) {
-                    ref.read(searchQueryProvider.notifier).update(value);
-                  },
                 ),
-              ),
+                const SizedBox(width: 10),
+                // Tombol Sort / Urutan Nota
+                PopupMenuButton<ReceiptSortOption>(
+                  tooltip: 'Urutkan Nota',
+                  initialValue: ref.watch(sortOptionProvider),
+                  onSelected: (option) {
+                    ref.read(sortOptionProvider.notifier).select(option);
+                  },
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                  itemBuilder: (context) {
+                    final currentSort = ref.watch(sortOptionProvider);
+                    return ReceiptSortOption.values.map((option) {
+                      final isSelected = currentSort == option;
+                      return PopupMenuItem<ReceiptSortOption>(
+                        value: option,
+                        child: Row(
+                          children: [
+                            Icon(
+                              option.icon,
+                              size: 18,
+                              color: isSelected ? AppColors.accentBlue : AppColors.textGrey,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                option.label,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  color: isSelected ? AppColors.accentBlue : null,
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check, size: 16, color: AppColors.accentBlue),
+                          ],
+                        ),
+                      );
+                    }).toList();
+                  },
+                  child: Container(
+                    height: 50,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF334155)
+                            : AppColors.cardBorder,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.shadowColor,
+                          blurRadius: 10,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(
+                          Icons.tune_rounded, // Ikon Filter / Slider sesuai Foto 1
+                          color: AppColors.primaryBlue,
+                          size: 22,
+                        ),
+                        // Indikator titik jika filter non-default sedang aktif
+                        if (ref.watch(sortOptionProvider) != ReceiptSortOption.newest)
+                          Positioned(
+                            top: 11,
+                            right: 11,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryBlue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const CategoryChips(),

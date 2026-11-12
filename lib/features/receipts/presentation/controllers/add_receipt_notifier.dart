@@ -95,6 +95,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
     required int warrantyMonths,
     required int warrantyDays,
     required String? imagePath,
+    String? warrantyCardPath,
   }) async {
     // 5. Validasi Form
     if (productName.trim().isEmpty) {
@@ -149,6 +150,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
           durasiGaransiBulan: warrantyMonths,
           durasiGaransiHari: warrantyDays,
           fotoPath: imagePath,
+          fotoKartuGaransiPath: warrantyCardPath,
         );
         savedReceipt = Receipt(
           id: editId,
@@ -159,6 +161,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
           warrantyMonths: warrantyMonths,
           warrantyDays: warrantyDays,
           imagePath: imagePath,
+          warrantyCardPath: warrantyCardPath,
         );
       } else {
         // Lakukan proses simpan data baru
@@ -170,6 +173,7 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
           durasiGaransiBulan: warrantyMonths,
           durasiGaransiHari: warrantyDays,
           fotoPath: imagePath,
+          fotoKartuGaransiPath: warrantyCardPath,
         );
       }
       

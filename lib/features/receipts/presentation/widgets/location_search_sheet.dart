@@ -669,45 +669,76 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                         },
                       )
                     : _searchController.text.trim().isNotEmpty && !_isLoading
-                        // State saat tidak ditemukan hasil pencarian (Keyboard-Safe Scrollable)
+                        // State saat tidak ditemukan hasil pencarian di OpenStreetMap (Keyboard-Safe Scrollable)
                         ? SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.location_off_outlined,
-                                  size: 40,
-                                  color: AppColors.textGrey,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tidak ditemukan hasil di peta untuk "${_searchController.text.trim()}"',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                    color: AppColors.textDark,
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade50,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.amber.shade300),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        size: 32,
+                                        color: Colors.amber.shade900,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Alamat Tidak Ditemukan di Peta',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: Colors.amber.shade900,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              'Lokasi "${_searchController.text.trim()}" belum terdaftar di OpenStreetMap. Anda dapat mengetik alamat lengkapnya secara manual pada form nota.',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.amber.shade900,
+                                                height: 1.3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'Anda tetap dapat menggunakan teks ini langsung sebagai alamat toko.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 12, color: AppColors.textGrey),
-                                ),
-                                const SizedBox(height: 12),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.pop(context, _searchController.text.trim());
-                                  },
-                                  icon: const Icon(Icons.check, size: 18),
-                                  label: Text('Gunakan "${_searchController.text.trim()}"'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryBlue,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      // Tutup modal dan kirim sinyal isi manual
+                                      Navigator.pop(context, 'MANUAL_INPUT:${_searchController.text.trim()}');
+                                    },
+                                    icon: const Icon(Icons.edit_note_rounded, size: 20),
+                                    label: const Text(
+                                      'Isi Manual di Form Nota',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryBlue,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 14),

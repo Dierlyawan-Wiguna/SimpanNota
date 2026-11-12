@@ -33,6 +33,9 @@ class DatabaseHelper {
         try {
           await db.execute('ALTER TABLE receipts ADD COLUMN warrantyDays INTEGER NOT NULL DEFAULT 0');
         } catch (_) {}
+        try {
+          await db.execute('ALTER TABLE receipts ADD COLUMN warrantyCardPath TEXT');
+        } catch (_) {}
       },
     );
   }
@@ -47,7 +50,8 @@ CREATE TABLE receipts (
   purchaseDate TEXT NOT NULL,
   warrantyMonths INTEGER NOT NULL,
   warrantyDays INTEGER NOT NULL DEFAULT 0,
-  imagePath TEXT NOT NULL
+  imagePath TEXT NOT NULL,
+  warrantyCardPath TEXT
 )
 ''');
   }

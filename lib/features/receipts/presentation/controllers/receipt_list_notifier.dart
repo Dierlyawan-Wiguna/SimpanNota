@@ -1,8 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/receipt.dart';
 import '../../services/receipt_repository.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/category.dart';
+
+enum ReceiptSortOption {
+  newest('Tanggal Beli (Terbaru)', Icons.calendar_today_rounded),
+  expiringSoon('Garansi Segera Habis', Icons.hourglass_bottom_rounded),
+  oldest('Tanggal Beli (Terlama)', Icons.history_rounded),
+  alphabetical('Nama Barang (A - Z)', Icons.sort_by_alpha_rounded);
+
+  final String label;
+  final IconData icon;
+  const ReceiptSortOption(this.label, this.icon);
+}
+
+class SortOptionNotifier extends Notifier<ReceiptSortOption> {
+  @override
+  ReceiptSortOption build() => ReceiptSortOption.newest;
+  
+  void select(ReceiptSortOption option) => state = option;
+}
+final sortOptionProvider = NotifierProvider<SortOptionNotifier, ReceiptSortOption>(SortOptionNotifier.new);
 
 class SearchQueryNotifier extends Notifier<String> {
   @override
@@ -28,14 +48,32 @@ final filteredReceiptListProvider = Provider<AsyncValue<List<Receipt>>>((ref) {
   final receiptsState = ref.watch(receiptListProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase();
   final selectedCategory = ref.watch(selectedCategoryProvider);
+  final sortOption = ref.watch(sortOptionProvider);
 
   return receiptsState.whenData((receipts) {
-    return receipts.where((receipt) {
+    var filtered = receipts.where((receipt) {
       final matchesQuery = receipt.productName.toLowerCase().contains(searchQuery) ||
                            receipt.storeName.toLowerCase().contains(searchQuery);
       final matchesCategory = selectedCategory == null || receipt.category == selectedCategory;
       return matchesQuery && matchesCategory;
     }).toList();
+
+    switch (sortOption) {
+      case ReceiptSortOption.expiringSoon:
+        filtered.sort((a, b) => a.expirationDate.compareTo(b.expirationDate));
+        break;
+      case ReceiptSortOption.newest:
+        filtered.sort((a, b) => b.purchaseDate.compareTo(a.purchaseDate));
+        break;
+      case ReceiptSortOption.oldest:
+        filtered.sort((a, b) => a.purchaseDate.compareTo(b.purchaseDate));
+        break;
+      case ReceiptSortOption.alphabetical:
+        filtered.sort((a, b) => a.productName.toLowerCase().compareTo(b.productName.toLowerCase()));
+        break;
+    }
+
+    return filtered;
   });
 });
 

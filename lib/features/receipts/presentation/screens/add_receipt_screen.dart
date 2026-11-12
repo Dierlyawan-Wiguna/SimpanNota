@@ -29,6 +29,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _warrantyMonthsController = TextEditingController();
   final TextEditingController _warrantyDaysController = TextEditingController();
+  final FocusNode _addressFocusNode = FocusNode();
   
   // Format durasi garansi: 0 = Bulan Saja, 1 = Hari Saja, 2 = Bulan + Hari
   int _warrantyTypeIndex = 0;
@@ -37,9 +38,11 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
   Category? _selectedCategory;
   DateTime? _purchaseDate;
   String? _imagePath;
+  String? _warrantyCardPath;
 
   // State Advanced: Kamera (image_picker)
   bool _isProcessingImage = false;
+  bool _isProcessingWarrantyCard = false;
 
   // State Advanced: Lokasi Toko
   String? _locationError;
@@ -76,6 +79,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       _selectedCategory = receipt.category;
       _purchaseDate = receipt.purchaseDate;
       _imagePath = receipt.imagePath;
+      _warrantyCardPath = receipt.warrantyCardPath;
     }
   }
 
@@ -86,6 +90,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     _addressController.dispose();
     _warrantyMonthsController.dispose();
     _warrantyDaysController.dispose();
+    _addressFocusNode.dispose();
     super.dispose();
   }
 
@@ -205,6 +210,94 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
     }
   }
 
+  /// Fitur Multi-Lampiran: Memilih gambar kartu garansi fisik dari Kamera atau Galeri.
+  Future<void> _pickWarrantyCardImage(ImageSource source) async {
+    setState(() {
+      _isProcessingWarrantyCard = true;
+    });
+
+    try {
+      final picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+
+      if (!mounted) return;
+
+      if (pickedFile != null) {
+        setState(() {
+          _warrantyCardPath = pickedFile.path;
+          _isProcessingWarrantyCard = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(source == ImageSource.camera
+                      ? 'Foto kartu garansi berhasil diambil dari kamera!'
+                      : 'Foto kartu garansi berhasil dipilih dari galeri!'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          _isProcessingWarrantyCard = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProcessingWarrantyCard = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Gagal memproses gambar: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeWarrantyCard() {
+    setState(() {
+      _warrantyCardPath = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.delete_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Foto kartu garansi dihapus.'),
+          ],
+        ),
+        backgroundColor: Colors.grey.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   /// Fitur Lokasi: Membuka dialog/sheet pencarian lokasi toko atau mendeteksi alamat via GPS
   Future<void> _openLocationSearch() async {
     // Prioritaskan alamat toko jika sudah terisi, atau nama toko sebagai kata kunci awal
@@ -219,6 +312,99 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       context,
       initialQuery: queryToPass,
     );
+
+    if (!mounted) return;
+
+    // Skenario: Alamat tidak ditemukan di OpenStreetMap dan user memilih opsi Isi Manual
+    if (selectedAddress != null && selectedAddress.startsWith('MANUAL_INPUT:')) {
+      final manualText = selectedAddress.replaceFirst('MANUAL_INPUT:', '').trim();
+      setState(() {
+        if (manualText.isNotEmpty) {
+          _addressController.text = manualText;
+        }
+        _locationError = null;
+      });
+
+      // Tampilkan Pop-up Peringatan Edukatif
+      await showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          backgroundColor: Theme.of(context).cardTheme.color ?? AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.location_off_rounded, color: Colors.amber.shade900, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Alamat Tidak Ada di Peta',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                manualText.isNotEmpty
+                    ? 'Lokasi "$manualText" belum terdaftar di OpenStreetMap.'
+                    : 'Alamat toko yang Anda cari belum terdaftar di OpenStreetMap.',
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue.shade100),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.edit_note_rounded, color: AppColors.primaryBlue, size: 22),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Silakan lengkapi atau ketik alamat toko secara manual pada kolom "Alamat Toko" di bawah.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Mengerti, Isi Manual'),
+            ),
+          ],
+        ),
+      );
+
+      // Fokuskan kursor ke TextField Alamat Toko agar pengguna bisa langsung mengetik
+      _addressFocusNode.requestFocus();
+      return;
+    }
 
     if (selectedAddress != null && selectedAddress.trim().isNotEmpty && mounted) {
       setState(() {
@@ -326,6 +512,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       warrantyMonths: months,
       warrantyDays: days,
       imagePath: _imagePath,
+      warrantyCardPath: _warrantyCardPath,
     );
 
     if (mounted) {
@@ -605,6 +792,159 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                             ),
                           const SizedBox(height: 16),
 
+                          // ===================================================
+                          // Form Upload Foto Kartu Garansi Fisik (Opsional)
+                          // ===================================================
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 1.0,
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.verified_user_outlined, size: 18, color: AppColors.primaryBlue),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Foto Kartu Garansi Fisik',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'Opsional',
+                                        style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Sertakan foto fisik kartu garansi, barcode toko, atau nomor seri IMEI sebagai bukti cadangan.',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                                const SizedBox(height: 10),
+                                if (_isProcessingWarrantyCard)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                else if (_warrantyCardPath != null)
+                                  Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: SizedBox(
+                                          height: 140,
+                                          width: double.infinity,
+                                          child: _warrantyCardPath!.startsWith('http')
+                                              ? Image.network(
+                                                  _warrantyCardPath!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (ctx, err, stack) => const Center(
+                                                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                                  ),
+                                                )
+                                              : Image.file(
+                                                  File(_warrantyCardPath!),
+                                                  fit: BoxFit.cover,
+                                                ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: Colors.black.withValues(alpha: 0.65),
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                                            onPressed: _removeWarrantyCard,
+                                            tooltip: 'Hapus foto garansi',
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 6,
+                                        right: 6,
+                                        child: Row(
+                                          children: [
+                                            ElevatedButton.icon(
+                                              onPressed: () => _pickWarrantyCardImage(ImageSource.camera),
+                                              icon: const Icon(Icons.camera_alt, size: 14),
+                                              label: const Text('Kamera', style: TextStyle(fontSize: 11)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.black.withValues(alpha: 0.7),
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            ElevatedButton.icon(
+                                              onPressed: () => _pickWarrantyCardImage(ImageSource.gallery),
+                                              icon: const Icon(Icons.photo_library, size: 14),
+                                              label: const Text('Galeri', style: TextStyle(fontSize: 11)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.black.withValues(alpha: 0.7),
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => _pickWarrantyCardImage(ImageSource.camera),
+                                          icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                                          label: const Text('Kamera', style: TextStyle(fontSize: 12)),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => _pickWarrantyCardImage(ImageSource.gallery),
+                                          icon: const Icon(Icons.photo_library_outlined, size: 16),
+                                          label: const Text('Galeri', style: TextStyle(fontSize: 12)),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
                           // Form Input Nama Barang
                           Semantics(
                             textField: true,
@@ -658,6 +998,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                             hint: 'Ketik alamat toko atau gunakan tombol cari lokasi toko',
                             child: TextField(
                               controller: _addressController,
+                              focusNode: _addressFocusNode,
                               decoration: InputDecoration(
                                 labelText: 'Alamat Toko',
                                 hintText: 'Contoh: Jl. Jenderal Sudirman No. 12, Jakarta',

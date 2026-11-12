@@ -61,6 +61,7 @@ class FakeReceiptRepository extends ReceiptRepository {
     required int durasiGaransiBulan,
     int durasiGaransiHari = 0,
     required String fotoPath,
+    String? fotoKartuGaransiPath,
   }) async {
     // Delay menengah (500ms) agar pengujian (test) sempat "menangkap" 
     // UI tombol form yang sedang berubah menjadi Loading Indicator (Kondisi 6).
@@ -74,6 +75,7 @@ class FakeReceiptRepository extends ReceiptRepository {
       warrantyMonths: durasiGaransiBulan,
       warrantyDays: durasiGaransiHari,
       imagePath: fotoPath,
+      warrantyCardPath: fotoKartuGaransiPath,
     );
   }
 }

@@ -10,6 +10,7 @@ class Receipt {
   final int warrantyMonths;
   final int warrantyDays;
   final String imagePath;
+  final String? warrantyCardPath;
 
   Receipt({
     this.id,
@@ -20,6 +21,7 @@ class Receipt {
     required this.warrantyMonths,
     this.warrantyDays = 0,
     required this.imagePath,
+    this.warrantyCardPath,
   });
 
   /// Menghitung tanggal kedaluwarsa secara presisi berdasarkan kombinasi bulan dan hari
@@ -69,6 +71,7 @@ class Receipt {
       'warrantyMonths': warrantyMonths,
       'warrantyDays': warrantyDays,
       'imagePath': imagePath,
+      'warrantyCardPath': warrantyCardPath,
     };
   }
 
@@ -85,6 +88,7 @@ class Receipt {
       warrantyMonths: map['warrantyMonths'] as int? ?? 0,
       warrantyDays: map['warrantyDays'] as int? ?? 0,
       imagePath: map['imagePath'] as String,
+      warrantyCardPath: map['warrantyCardPath'] as String?,
     );
   }
 
@@ -99,6 +103,7 @@ class Receipt {
       'warrantyMonths': warrantyMonths,
       'warrantyDays': warrantyDays,
       'imagePath': imagePath,
+      'warrantyCardPath': warrantyCardPath,
       'title': productName,
       'body': storeName,
       'userId': 1,
@@ -106,7 +111,7 @@ class Receipt {
   }
 
   // Supabase PostgreSQL mapping: toSupabaseMap
-  Map<String, dynamic> toSupabaseMap({bool includeDays = true}) {
+  Map<String, dynamic> toSupabaseMap({bool includeDays = true, bool includeWarrantyCard = true}) {
     return {
       if (id != null) 'id': id,
       'product_name': productName,
@@ -114,8 +119,10 @@ class Receipt {
       'store_name': storeName,
       'purchase_date': purchaseDate.toIso8601String().split('T').first,
       'warranty_months': warrantyMonths > 0 ? warrantyMonths : 1,
-      if (includeDays && warrantyDays > 0) 'warranty_days': warrantyDays,
+      if (includeDays) 'warranty_days': warrantyDays,
       'image_path': imagePath,
+      if (includeWarrantyCard && warrantyCardPath != null && warrantyCardPath!.isNotEmpty)
+        'warranty_card_path': warrantyCardPath,
     };
   }
 
@@ -127,6 +134,7 @@ class Receipt {
       final monthsRaw = json['warranty_months'] ?? json['warrantyMonths'];
       final daysRaw = json['warranty_days'] ?? json['warrantyDays'];
       final imageRaw = json['image_path'] ?? json['imagePath'] ?? '';
+      final cardRaw = json['warranty_card_path'] ?? json['warrantyCardPath'];
 
       return Receipt(
         id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
@@ -146,6 +154,7 @@ class Receipt {
             ? int.tryParse(daysRaw.toString()) ?? 0
             : 0,
         imagePath: imageRaw.toString(),
+        warrantyCardPath: cardRaw?.toString(),
       );
     } catch (e) {
       throw FormatException('Gagal melakukan parsing JSON API ke bentuk Receipt: $e');
@@ -161,6 +170,7 @@ class Receipt {
     int? warrantyMonths,
     int? warrantyDays,
     String? imagePath,
+    String? warrantyCardPath,
   }) {
     return Receipt(
       id: id ?? this.id,
@@ -171,6 +181,7 @@ class Receipt {
       warrantyMonths: warrantyMonths ?? this.warrantyMonths,
       warrantyDays: warrantyDays ?? this.warrantyDays,
       imagePath: imagePath ?? this.imagePath,
+      warrantyCardPath: warrantyCardPath ?? this.warrantyCardPath,
     );
   }
 }
