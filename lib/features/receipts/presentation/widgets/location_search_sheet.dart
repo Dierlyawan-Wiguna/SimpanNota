@@ -603,7 +603,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                     ? ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         itemCount: _results.length + 1, // +1 untuk opsi manual di paling bawah
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           if (index < _results.length) {
                             final item = _results[index];

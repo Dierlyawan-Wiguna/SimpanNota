@@ -3,16 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
 import '../../../../core/theme/theme_provider.dart';
-import '../../../../core/utils/input_validator.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
-import '../../domain/profile_validator.dart';
 import '../../domain/user_profile.dart';
 import '../../services/profile_repository.dart';
 import '../widgets/password_form_dialog.dart';
@@ -158,30 +154,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _loadUserData();
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Foto profil berhasil diperbarui!'),
-                  ],
-                ),
-                backgroundColor: Colors.green.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            );
+            AppSnackBar.showSuccess(context, 'Foto profil berhasil diperbarui!');
           }
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Gagal memilih foto: $e'),
-              backgroundColor: Colors.red.shade600,
-            ),
-          );
+          AppSnackBar.showError(context, 'Gagal memilih foto: $e');
         }
       }
     }
@@ -194,20 +172,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       onSubmit: (newPassword) async {
         await ref.read(profileRepositoryProvider).changePassword(newPassword);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle_outline, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Kata sandi berhasil diperbarui!')),
-                ],
-              ),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+          AppSnackBar.showSuccess(context, 'Kata sandi berhasil diperbarui!');
         }
       },
     );
@@ -226,20 +191,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
         _loadUserData();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('Profil berhasil diperbarui!'),
-                ],
-              ),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+          AppSnackBar.showSuccess(context, 'Profil berhasil diperbarui!');
         }
       },
     );
@@ -370,7 +322,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ? Image.network(
                                       avatarUrl,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Center(
+                                      errorBuilder: (_, _, _) => Center(
                                         child: Text(
                                           initials,
                                           style: const TextStyle(
@@ -384,7 +336,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   : Image.file(
                                       File(avatarUrl),
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Center(
+                                      errorBuilder: (_, _, _) => Center(
                                         child: Text(
                                           initials,
                                           style: const TextStyle(
@@ -597,7 +549,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     Switch.adaptive(
                       value: ref.watch(themeModeProvider) == ThemeMode.dark,
-                      activeColor: const Color(0xFF38BDF8),
+                      activeTrackColor: const Color(0xFF38BDF8),
                       onChanged: (val) {
                         ref.read(themeModeProvider.notifier).setTheme(
                               val ? ThemeMode.dark : ThemeMode.light,

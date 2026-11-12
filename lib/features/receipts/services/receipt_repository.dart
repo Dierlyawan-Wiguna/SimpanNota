@@ -82,9 +82,10 @@ class ReceiptRepository {
 
   /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback SQLite lokal / HTTP Client jika disediakan)
   Future<List<Receipt>> getReceipts() async {
-    if (_httpClient != null) {
+    final httpClient = _httpClient;
+    if (httpClient != null) {
       try {
-        final response = await _httpClient!.get(
+        final response = await httpClient.get(
           Uri.parse('https://jsonplaceholder.typicode.com/posts'),
         );
         if (response.statusCode == 200) {

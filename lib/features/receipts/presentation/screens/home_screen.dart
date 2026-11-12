@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
 import '../../../../core/widgets/customer_service_button.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/receipt_card.dart';
 import 'add_receipt_screen.dart';
 import 'receipt_detail_screen.dart';
-import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../controllers/receipt_list_notifier.dart';
 import '../../domain/receipt.dart';

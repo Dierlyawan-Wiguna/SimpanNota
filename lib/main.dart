@@ -18,7 +18,7 @@ void main() async {
     try {
       await Supabase.initialize(
         url: SupabaseConstants.supabaseUrl,
-        anonKey: SupabaseConstants.supabaseAnonKey,
+        publishableKey: SupabaseConstants.supabaseAnonKey,
       );
       debugPrint('Supabase berhasil diinisialisasi.');
     } catch (e) {

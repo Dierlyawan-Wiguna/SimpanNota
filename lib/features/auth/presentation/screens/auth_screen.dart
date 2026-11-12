@@ -831,7 +831,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (_, setDialogState) {
             return AlertDialog(
               backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(
@@ -967,8 +967,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                             }
 
-                            if (mounted) {
+                            if (dialogContext.mounted) {
                               Navigator.pop(dialogContext);
+                            }
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Row(
@@ -1566,7 +1568,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         data: {
           'full_name': name,
           'name': name,
-          if (formattedPhone != null) 'phone': formattedPhone,
+          'phone': ?formattedPhone,
         },
       );
 
