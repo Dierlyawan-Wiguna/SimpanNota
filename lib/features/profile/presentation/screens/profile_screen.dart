@@ -15,6 +15,8 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../domain/profile_validator.dart';
 import '../../domain/user_profile.dart';
 import '../../services/profile_repository.dart';
+import '../widgets/password_form_dialog.dart';
+import '../widgets/profile_form.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -187,406 +189,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   /// Task 3: Ubah Kata Sandi (Change Password)
   Future<void> _changePasswordDialog() async {
-    final passController = TextEditingController();
-    final confirmPassController = TextEditingController();
-    bool isObscure = true;
-    bool isSaving = false;
-    String? dialogError;
-
-    await showDialog(
+    await PasswordFormDialog.show(
       context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Row(
+      onSubmit: (newPassword) async {
+        await ref.read(profileRepositoryProvider).changePassword(newPassword);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightBlue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Ubah Kata Sandi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
+                  Icon(Icons.check_circle_outline, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Kata sandi berhasil diperbarui!')),
                 ],
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Masukkan kata sandi baru untuk akun Anda (minimal 6 karakter).',
-                      style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.4),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Kata Sandi Baru',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: passController,
-                      obscureText: isObscure,
-                      decoration: InputDecoration(
-                        hintText: 'Minimal 6 karakter',
-                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            isObscure ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () => setDialogState(() => isObscure = !isObscure),
-                        ),
-                        filled: true,
-                        fillColor: AppColors.background,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Konfirmasi Kata Sandi Baru',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: confirmPassController,
-                      obscureText: isObscure,
-                      decoration: InputDecoration(
-                        hintText: 'Ulangi kata sandi baru',
-                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
-                        filled: true,
-                        fillColor: AppColors.background,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                    if (dialogError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Text(
-                          dialogError!,
-                          style: TextStyle(color: Colors.red.shade700, fontSize: 12),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                TextButton(
-                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.w600)),
-                ),
-                ElevatedButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          final validationError = ProfileValidator.validatePasswordChange(
-                            newPassword: passController.text,
-                            confirmPassword: confirmPassController.text,
-                          );
-                          if (validationError != null) {
-                            setDialogState(() => dialogError = validationError);
-                            return;
-                          }
-                          setDialogState(() {
-                            isSaving = true;
-                            dialogError = null;
-                          });
-
-                          try {
-                            await ref.read(profileRepositoryProvider).changePassword(passController.text);
-                            if (mounted) {
-                              Navigator.pop(dialogCtx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.check_circle_outline, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Expanded(child: Text('Kata sandi berhasil diperbarui!')),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green.shade600,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            setDialogState(() {
-                              isSaving = false;
-                              dialogError = 'Gagal mengubah kata sandi: $e';
-                            });
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Simpan'),
-                ),
-              ],
-            );
-          },
-        );
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
       },
     );
   }
 
+  /// Ubah Profil (Edit Profile)
   Future<void> _editProfileDialog() async {
-    final nameController = TextEditingController(text: _getDisplayName());
-    final phoneController = TextEditingController(
-      text: ProfileValidator.cleanPhoneForInput(_getPhoneNumber()),
-    );
-    String? dialogError;
-    bool isSaving = false;
-
-    await showDialog(
+    await ProfileForm.showAsDialog(
       context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Row(
+      initialName: _getDisplayName(),
+      initialPhone: _getPhoneNumber(),
+      onSubmit: (data) async {
+        await ref.read(profileRepositoryProvider).updateProfile(
+          displayName: data.name,
+          phone: data.phone,
+        );
+        _loadUserData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightBlue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.edit_rounded, color: AppColors.primaryBlue, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Ubah Profil',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Profil berhasil diperbarui!'),
                 ],
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Nama Pengguna',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        hintText: 'Nama lengkap Anda',
-                        prefixIcon: const Icon(Icons.person_outline, color: AppColors.primaryBlue),
-                        filled: true,
-                        fillColor: AppColors.background,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Nomor Telepon (WhatsApp)',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: '81234567890',
-                        prefixIcon: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '+62',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              SizedBox(width: 6),
-                              SizedBox(
-                                height: 20,
-                                child: VerticalDivider(color: AppColors.cardBorder, width: 1),
-                              ),
-                            ],
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: AppColors.background,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.cardBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                    if (dialogError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Text(
-                          dialogError!,
-                          style: TextStyle(color: Colors.red.shade700, fontSize: 12),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                TextButton(
-                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.w600)),
-                ),
-                ElevatedButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          final newName = nameController.text.trim();
-                          final nameError = ProfileValidator.validateDisplayName(newName);
-                          if (nameError != null) {
-                            setDialogState(() => dialogError = nameError);
-                            return;
-                          }
-
-                          final phoneError = ProfileValidator.validatePhoneNumber(
-                            phoneController.text,
-                            isOptional: true,
-                          );
-                          if (phoneError != null) {
-                            setDialogState(() => dialogError = phoneError);
-                            return;
-                          }
-
-                          final formattedPhone = ProfileValidator.formatPhone(phoneController.text);
-
-                          setDialogState(() {
-                            isSaving = true;
-                            dialogError = null;
-                          });
-
-                          try {
-                            await ref.read(profileRepositoryProvider).updateProfile(
-                              displayName: newName,
-                              phone: formattedPhone,
-                            );
-
-                            if (mounted) {
-                              Navigator.pop(dialogCtx);
-                              _loadUserData();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Text('Profil berhasil diperbarui!'),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green.shade600,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            setDialogState(() {
-                              isSaving = false;
-                              dialogError = 'Gagal menyimpan: $e';
-                            });
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Simpan'),
-                ),
-              ],
-            );
-          },
-        );
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
       },
     );
   }
