@@ -10,7 +10,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../../core/utils/input_validator.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../domain/profile_validator.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -377,14 +379,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onPressed: isSaving
                       ? null
                       : () async {
-                          final newPass = passController.text;
-                          final confirmPass = confirmPassController.text;
-                          if (newPass.length < 6) {
-                            setDialogState(() => dialogError = 'Kata sandi minimal 6 karakter.');
-                            return;
-                          }
-                          if (newPass != confirmPass) {
-                            setDialogState(() => dialogError = 'Konfirmasi kata sandi tidak cocok.');
+                          final validationError = ProfileValidator.validatePasswordChange(
+                            newPassword: passController.text,
+                            confirmPassword: confirmPassController.text,
+                          );
+                          if (validationError != null) {
+                            setDialogState(() => dialogError = validationError);
                             return;
                           }
                           setDialogState(() {
@@ -395,7 +395,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           try {
                             if (SupabaseConstants.isConfigured) {
                               await Supabase.instance.client.auth.updateUser(
-                                UserAttributes(password: newPass),
+                                UserAttributes(password: passController.text),
                               );
                             }
                             if (mounted) {
@@ -445,16 +445,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _editProfileDialog() async {
     final nameController = TextEditingController(text: _getDisplayName());
-    String currentPhone = _getPhoneNumber();
-    if (currentPhone == '-') currentPhone = '';
-    if (currentPhone.startsWith('+62')) {
-      currentPhone = currentPhone.substring(3);
-    } else if (currentPhone.startsWith('62')) {
-      currentPhone = currentPhone.substring(2);
-    } else if (currentPhone.startsWith('0')) {
-      currentPhone = currentPhone.substring(1);
-    }
-    final phoneController = TextEditingController(text: currentPhone);
+    final phoneController = TextEditingController(
+      text: ProfileValidator.cleanPhoneForInput(_getPhoneNumber()),
+    );
     String? dialogError;
     bool isSaving = false;
 
@@ -590,23 +583,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ? null
                       : () async {
                           final newName = nameController.text.trim();
-                          var rawPhone = phoneController.text.trim();
-
-                          if (newName.isEmpty) {
-                            setDialogState(() {
-                              dialogError = 'Nama pengguna tidak boleh kosong.';
-                            });
+                          final nameError = ProfileValidator.validateDisplayName(newName);
+                          if (nameError != null) {
+                            setDialogState(() => dialogError = nameError);
                             return;
                           }
 
-                          rawPhone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
-                          if (rawPhone.startsWith('0')) {
-                            rawPhone = rawPhone.substring(1);
-                          } else if (rawPhone.startsWith('62')) {
-                            rawPhone = rawPhone.substring(2);
+                          final phoneError = ProfileValidator.validatePhoneNumber(
+                            phoneController.text,
+                            isOptional: true,
+                          );
+                          if (phoneError != null) {
+                            setDialogState(() => dialogError = phoneError);
+                            return;
                           }
 
-                          final formattedPhone = rawPhone.isNotEmpty ? '+62$rawPhone' : '';
+                          final formattedPhone = ProfileValidator.formatPhone(phoneController.text);
 
                           setDialogState(() {
                             isSaving = true;

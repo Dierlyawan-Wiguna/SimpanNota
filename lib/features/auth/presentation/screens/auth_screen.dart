@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
+import '../../../../core/utils/input_validator.dart';
 import '../../../../core/widgets/customer_service_button.dart';
 import '../../../receipts/presentation/screens/home_screen.dart';
 
@@ -597,15 +598,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty) {
-      setState(() => _errorMessage = 'Email harus diisi.');
+    final emailError = InputValidator.validateEmail(email);
+    if (emailError != null) {
+      setState(() => _errorMessage = emailError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Email harus diisi.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(emailError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -617,15 +619,17 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    if (password.isEmpty) {
-      setState(() => _errorMessage = 'Password harus diisi.');
+
+    final passwordError = InputValidator.validatePassword(password, minLength: 1);
+    if (passwordError != null) {
+      setState(() => _errorMessage = passwordError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Password harus diisi.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(passwordError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -1429,15 +1433,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final confirmPassword = _confirmPasswordController.text;
     var phoneInput = _phoneController.text.trim();
 
-    if (name.isEmpty) {
-      setState(() => _errorMessage = 'Nama lengkap harus diisi.');
+    final nameError = InputValidator.validateName(name);
+    if (nameError != null) {
+      setState(() => _errorMessage = nameError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Nama lengkap harus diisi.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(nameError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -1450,15 +1455,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (email.isEmpty) {
-      setState(() => _errorMessage = 'Email harus diisi.');
+    final emailError = InputValidator.validateEmail(email);
+    if (emailError != null) {
+      setState(() => _errorMessage = emailError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Email harus diisi.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(emailError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -1470,15 +1476,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    if (password.length < 6) {
-      setState(() => _errorMessage = 'Password minimal 6 karakter.');
+
+    final passwordError = InputValidator.validatePassword(password, minLength: 6);
+    if (passwordError != null) {
+      setState(() => _errorMessage = passwordError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Password minimal 6 karakter.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(passwordError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -1490,15 +1498,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    if (password != confirmPassword) {
-      setState(() => _errorMessage = 'Konfirmasi password tidak cocok.');
+
+    final confirmError = InputValidator.validateConfirmPassword(password, confirmPassword);
+    if (confirmError != null) {
+      setState(() => _errorMessage = confirmError);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Konfirmasi password tidak cocok.'),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(confirmError),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -1512,13 +1522,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // Normalisasi nomor telepon
-    phoneInput = phoneInput.replaceAll(RegExp(r'[^0-9]'), '');
-    if (phoneInput.startsWith('0')) {
-      phoneInput = phoneInput.substring(1);
-    } else if (phoneInput.startsWith('62')) {
-      phoneInput = phoneInput.substring(2);
-    }
-    final formattedPhone = phoneInput.isNotEmpty ? '+62$phoneInput' : null;
+    final rawFormattedPhone = InputValidator.formatIndonesianPhone(phoneInput);
+    final formattedPhone = rawFormattedPhone.isNotEmpty ? rawFormattedPhone : null;
 
     setState(() {
       _isLoading = true;
