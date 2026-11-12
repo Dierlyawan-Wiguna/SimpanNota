@@ -234,6 +234,20 @@ flutter test
   flutter test test/profile_baseline_test.dart
   ```
 
+### 4. Menjalankan Aplikasi di Perangkat / Emulator (Run App)
+- **Opsi A (Evaluasi Cepat / Offline SQLite Fallback - Tanpa Setup):**
+  Reviewer/Dosen dapat langsung menjalankan aplikasi tanpa konfigurasi Supabase:
+  ```bash
+  flutter run
+  ```
+  *Aplikasi otomatis beralih ke database SQLite lokal ponsel sehingga seluruh fitur CRUD nota, upload foto, filter kategori, dan status garansi siap diuji langsung.*
+- **Opsi B (Dengan Cloud Supabase):**
+  Jika ingin menghubungkan ke backend cloud Supabase:
+  ```bash
+  flutter run --dart-define-from-file=.env
+  ```
+  *(Atau jalankan langsung `flutter run` bagi pengembang dengan kredensial lokal aktif).*
+
 ---
 
 ## 5. Ringkasan File Baru & File yang Di-refactor
