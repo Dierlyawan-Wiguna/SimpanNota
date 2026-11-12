@@ -18,68 +18,6 @@ import '../../domain/receipt.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  Future<void> _confirmSignOut(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Keluar dari Akun?'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun SimpanNota?'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        actions: [
-          Semantics(
-            button: true,
-            label: 'Batal keluar akun',
-            child: TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: 'Konfirmasi keluar akun',
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Keluar'),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      if (SupabaseConstants.isConfigured) {
-        try {
-          await Supabase.instance.client.auth.signOut();
-        } catch (_) {}
-      }
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Anda telah berhasil keluar.'),
-              ],
-            ),
-            backgroundColor: Colors.black87,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-        Navigator.pushAndRemoveUntil(
-          context,
-          FadePageRoute(page: const LoginScreen()),
-          (route) => false,
-        );
-      }
-    }
-  }
-
   Widget _buildDismissibleReceipt(
     BuildContext context,
     WidgetRef ref,
@@ -446,36 +384,40 @@ class HomeScreen extends ConsumerWidget {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Pojok Kiri: Tombol Customer Service "Butuh Bantuan?"
-            const CustomerServiceButton.floating(),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Pojok Kiri: Tombol Customer Service "Butuh Bantuan?"
+              const CustomerServiceButton.floating(),
+              const SizedBox(width: 16),
 
-            // Pojok Kanan: Tombol Tambah Nota
-            Semantics(
-              label: 'Tombol tambah nota',
-              hint: 'Ketuk untuk membuka formulir penambahan nota baru',
-              button: true,
-              child: FloatingActionButton.extended(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    FadePageRoute(page: const AddReceiptScreen()),
-                  );
-                },
-                icon: const Icon(Icons.add_rounded),
-                label: const Text(
-                  'Tambah Nota',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+              // Pojok Kanan: Tombol Tambah Nota
+              Semantics(
+                label: 'Tombol tambah nota',
+                hint: 'Ketuk untuk membuka formulir penambahan nota baru',
+                button: true,
+                child: FloatingActionButton.extended(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      FadePageRoute(page: const AddReceiptScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text(
+                    'Tambah Nota',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

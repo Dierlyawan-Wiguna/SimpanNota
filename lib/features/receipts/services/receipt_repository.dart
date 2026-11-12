@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/category.dart';
@@ -15,13 +17,15 @@ final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
 
 class ReceiptRepository {
   final DatabaseHelper _dbHelper;
+  final http.Client? _httpClient;
   final SupabaseClient? _customSupabaseClient;
 
   ReceiptRepository(
     this._dbHelper, {
     Object? client,
     SupabaseClient? supabaseClient,
-  }) : _customSupabaseClient = supabaseClient;
+  })  : _httpClient = client is http.Client ? client : null,
+        _customSupabaseClient = supabaseClient;
 
   SupabaseClient? get _supabase {
     if (_customSupabaseClient != null) return _customSupabaseClient;
@@ -76,8 +80,31 @@ class ReceiptRepository {
     }
   }
 
-  /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback SQLite lokal)
+  /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback SQLite lokal / HTTP Client jika disediakan)
   Future<List<Receipt>> getReceipts() async {
+    if (_httpClient != null) {
+      try {
+        final response = await _httpClient!.get(
+          Uri.parse('https://jsonplaceholder.typicode.com/posts'),
+        );
+        if (response.statusCode == 200) {
+          final List<dynamic> data = json.decode(response.body);
+          return data
+              .map((json) => Receipt.fromJson(json as Map<String, dynamic>))
+              .toList();
+        } else {
+          throw Exception(
+            'Gagal memuat data dari server (Status: ${response.statusCode})',
+          );
+        }
+      } catch (e) {
+        if (e is FormatException) {
+          throw Exception('Format JSON rusak: $e');
+        }
+        rethrow;
+      }
+    }
+
     final sb = _supabase;
     if (sb != null) {
       try {

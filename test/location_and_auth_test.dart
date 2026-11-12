@@ -39,6 +39,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Verifikasi tombol Cari Lokasi Toko ada
       expect(find.text('Cari Lokasi Toko'), findsOneWidget);
