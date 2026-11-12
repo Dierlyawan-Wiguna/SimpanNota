@@ -203,10 +203,18 @@ simpan_nota/
       constants/
         supabase_constants.dart
         app_colors.dart
+      navigation/
+        fade_page_route.dart
       services/
         notification_service.dart
+      theme/
+        theme_provider.dart
+      utils/
+        input_validator.dart
+        app_snackbar.dart
       widgets/
         auth_gate.dart
+        customer_service_button.dart
     features/
       auth/
         presentation/
@@ -214,10 +222,22 @@ simpan_nota/
           screens/auth_screen.dart
         services/
           auth_service.dart
+      profile/
+        domain/
+          user_profile.dart
+          profile_validator.dart
+        services/
+          profile_repository.dart
+        presentation/
+          screens/profile_screen.dart
+          widgets/
+            profile_form.dart
+            password_form_dialog.dart
       receipts/
         domain/
           category.dart
           warranty_status.dart
+          receipt.dart
           receipt_model.dart
         dto/
           receipt_filter_dto.dart
@@ -231,13 +251,29 @@ simpan_nota/
           widgets/
             receipt_card.dart
             category_chips.dart
+            location_search_sheet.dart
         services/
+          receipt_repository.dart
           receipt_service.dart
           storage_service.dart
     main.dart
   pubspec.yaml
   README.md
 ```
+
+---
+
+## Testing & Refactoring Standards (Pertemuan 9 Architecture)
+
+### 1. DRY (Don't Repeat Yourself)
+* **Input Validation & Phone Normalization**: Centralized in `lib/core/utils/input_validator.dart` and `lib/features/profile/domain/profile_validator.dart`. Screens and forms call these pure functions instead of re-implementing regex or string parsing.
+* **Notification / SnackBar Handling**: Centralized in `lib/core/utils/app_snackbar.dart` (`AppSnackBar.showSuccess`, `AppSnackBar.showError`, `AppSnackBar.showInfo`, `AppSnackBar.showWarning`). Standardizes background color, icons, border radius, and floating behavior.
+
+### 2. Separation of Concerns (SoC) & Single Responsibility Principle (SRP)
+* **Form UI State (`ProfileForm`, `PasswordFormDialog`)**: Handles input controllers, UI loading indicators, disabled button states, and form keys. No raw Supabase/API calls or inline business validation.
+* **Domain Validation (`ProfileValidator`, `InputValidator`)**: Pure functions returning error strings or null. Zero UI or backend dependencies, 100% testable via unit tests.
+* **Data Access (`ProfileRepository`, `ReceiptRepository`)**: Manages remote Supabase interactions (Auth, Storage, Database) and local fallbacks. Exposes clean domain entities (`UserProfile`, `Receipt`) to presentation consumers via Riverpod providers.
+
 
 ---
 
