@@ -13,6 +13,8 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/input_validator.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../domain/profile_validator.dart';
+import '../../domain/user_profile.dart';
+import '../../services/profile_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -22,7 +24,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  User? _currentUser;
+  UserProfile _profile = UserProfile.guest();
   String? _localAvatarPath;
 
   @override
@@ -32,82 +34,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _loadUserData() {
-    if (SupabaseConstants.isConfigured) {
-      try {
-        setState(() {
-          _currentUser = Supabase.instance.client.auth.currentUser;
-        });
-      } catch (_) {}
-    }
+    setState(() {
+      _profile = ref.read(profileRepositoryProvider).getCurrentProfile();
+    });
   }
 
-  String _getDisplayName() {
-    if (_currentUser == null) return 'Pengguna Tamu';
-    final metadata = _currentUser!.userMetadata;
-    final fullName = metadata?['full_name'] ?? metadata?['name'] ?? metadata?['display_name'];
-    if (fullName != null && fullName.toString().trim().isNotEmpty) {
-      return fullName.toString().trim();
-    }
-    if (_currentUser!.email != null && _currentUser!.email!.isNotEmpty) {
-      return _currentUser!.email!.split('@').first;
-    }
-    return 'Pengguna SimpanNota';
-  }
+  String _getDisplayName() => _profile.displayName;
 
-  String _getEmail() {
-    if (_currentUser == null) return 'tamu@simpannota.local';
-    return _currentUser!.email ?? '-';
-  }
+  String _getEmail() => _profile.email;
 
-  String _getPhoneNumber() {
-    if (_currentUser == null) return '-';
-    final phone = _currentUser!.phone;
-    if (phone != null && phone.isNotEmpty) return phone;
-    final metaPhone = _currentUser!.userMetadata?['phone'];
-    if (metaPhone != null && metaPhone.toString().isNotEmpty) {
-      return metaPhone.toString();
-    }
-    return '-';
-  }
+  String _getPhoneNumber() => _profile.phone;
 
-  String _getFormattedRegistrationDate() {
-    if (_currentUser == null) {
-      return DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now());
-    }
-    try {
-      final createdAtStr = _currentUser!.createdAt;
-      final dt = DateTime.parse(createdAtStr).toLocal();
-      return DateFormat('dd MMMM yyyy', 'id_ID').format(dt);
-    } catch (_) {
-      return '-';
-    }
-  }
+  String _getFormattedRegistrationDate() => _profile.formattedRegistrationDate;
 
-  String _getProviderName() {
-    if (_currentUser == null) return 'Offline';
-    final appMeta = _currentUser!.appMetadata;
-    final provider = appMeta['provider'] as String? ?? 'email';
-    if (provider.toLowerCase() == 'google') return 'Google Account';
-    return 'Email & Kata Sandi';
-  }
+  String _getProviderName() => _profile.authProvider;
 
-  String? _getAvatarUrl() {
-    if (_localAvatarPath != null) return _localAvatarPath;
-    if (_currentUser == null) return null;
-    final metadata = _currentUser!.userMetadata;
-    final avatar = metadata?['avatar_url'] ?? metadata?['picture'];
-    if (avatar != null && avatar.toString().trim().isNotEmpty) {
-      return avatar.toString().trim();
-    }
-    return null;
-  }
+  String? _getAvatarUrl() => _localAvatarPath ?? _profile.avatarUrl;
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return 'U';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
+  String _getInitials(String name) => _profile.initials;
 
   /// Task 4: Pilih Foto Profil Asli (Kamera atau Galeri)
   Future<void> _pickAvatarImage() async {
@@ -185,11 +129,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     setState(() {
                       _localAvatarPath = null;
                     });
-                    if (SupabaseConstants.isConfigured && _currentUser != null) {
-                      final updatedData = Map<String, dynamic>.from(_currentUser!.userMetadata ?? {});
-                      updatedData.remove('avatar_url');
-                      await Supabase.instance.client.auth.updateUser(UserAttributes(data: updatedData));
-                    }
+                    await ref.read(profileRepositoryProvider).updateAvatar(null);
+                    _loadUserData();
                   },
                 ),
             ],
@@ -211,11 +152,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _localAvatarPath = picked.path;
           });
 
-          if (SupabaseConstants.isConfigured && _currentUser != null) {
-            final updatedData = Map<String, dynamic>.from(_currentUser!.userMetadata ?? {});
-            updatedData['avatar_url'] = picked.path;
-            await Supabase.instance.client.auth.updateUser(UserAttributes(data: updatedData));
-          }
+          await ref.read(profileRepositoryProvider).updateAvatar(picked.path);
+          _loadUserData();
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -393,11 +331,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           });
 
                           try {
-                            if (SupabaseConstants.isConfigured) {
-                              await Supabase.instance.client.auth.updateUser(
-                                UserAttributes(password: passController.text),
-                              );
-                            }
+                            await ref.read(profileRepositoryProvider).changePassword(passController.text);
                             if (mounted) {
                               Navigator.pop(dialogCtx);
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -606,16 +540,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           });
 
                           try {
-                            if (SupabaseConstants.isConfigured && _currentUser != null) {
-                              final updatedData = Map<String, dynamic>.from(_currentUser!.userMetadata ?? {});
-                              updatedData['full_name'] = newName;
-                              if (formattedPhone.isNotEmpty) {
-                                updatedData['phone'] = formattedPhone;
-                              }
-                              await Supabase.instance.client.auth.updateUser(
-                                UserAttributes(data: updatedData),
-                              );
-                            }
+                            await ref.read(profileRepositoryProvider).updateProfile(
+                              displayName: newName,
+                              phone: formattedPhone,
+                            );
 
                             if (mounted) {
                               Navigator.pop(dialogCtx);
@@ -688,11 +616,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (confirmed == true && mounted) {
-      if (SupabaseConstants.isConfigured) {
-        try {
-          await Supabase.instance.client.auth.signOut();
-        } catch (_) {}
-      }
+      await ref.read(profileRepositoryProvider).signOut();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
