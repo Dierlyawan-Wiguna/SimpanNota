@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/supabase_constants.dart';
+import '../../../../core/services/app_logger.dart';
 import '../domain/user_profile.dart';
 
 /// Provider Riverpod untuk dependency injection ProfileRepository
@@ -72,6 +73,8 @@ class ProfileRepository {
     final user = sb.auth.currentUser;
     if (user == null) return;
 
+    AppLogger.info('PROFILE', 'Memperbarui profil pengguna: name=$displayName, hasTelegram=${telegramChatId != null && telegramChatId.isNotEmpty}');
+
     final updatedData = Map<String, dynamic>.from(user.userMetadata ?? {});
     updatedData['full_name'] = displayName;
     if (phone != null && phone.isNotEmpty) {
@@ -111,6 +114,7 @@ class ProfileRepository {
     final user = sb.auth.currentUser;
     if (user == null) return;
 
+    AppLogger.info('PROFILE', 'Memperbarui avatar profil pengguna.');
     final updatedData = Map<String, dynamic>.from(user.userMetadata ?? {});
     if (avatarPath != null && avatarPath.isNotEmpty) {
       updatedData['avatar_url'] = avatarPath;
@@ -128,6 +132,7 @@ class ProfileRepository {
     final sb = _supabase;
     if (sb == null) return;
 
+    AppLogger.info('PROFILE', 'Meminta perubahan kata sandi akun pengguna.');
     await sb.auth.updateUser(
       UserAttributes(password: newPassword),
     );
@@ -135,6 +140,7 @@ class ProfileRepository {
 
   /// Keluar dari sesi akun saat ini
   Future<void> signOut() async {
+    AppLogger.info('AUTH', 'Melakukan sign-out akun pengguna.');
     final sb = _supabase;
     if (sb != null) {
       await sb.auth.signOut();

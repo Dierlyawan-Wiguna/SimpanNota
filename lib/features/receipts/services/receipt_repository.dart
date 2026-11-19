@@ -9,6 +9,7 @@ import '../domain/category.dart';
 import '../domain/receipt.dart';
 import '../../../../core/local/database_helper.dart';
 import '../../../../core/constants/supabase_constants.dart';
+import '../../../../core/services/app_logger.dart';
 
 // Provider untuk menginjeksi ReceiptRepository ke layer Notifier/Controller
 final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
@@ -66,6 +67,7 @@ class ReceiptRepository {
       final fileName =
           'receipt_${DateTime.now().millisecondsSinceEpoch}_${localPath.hashCode.abs()}.$extension';
 
+      AppLogger.info('STORAGE', 'Mengunggah gambar ke Supabase bucket receipts: $fileName');
       await sb.storage.from('receipts').upload(
             fileName,
             file,
@@ -74,7 +76,8 @@ class ReceiptRepository {
 
       final publicUrl = sb.storage.from('receipts').getPublicUrl(fileName);
       return publicUrl;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.warning('STORAGE', 'Gagal upload foto ke Supabase, fallback path lokal: $e', e, stack);
       // Fallback ke path lokal jika upload gagal agar proses simpan data tidak terhambat
       return localPath;
     }
@@ -82,6 +85,7 @@ class ReceiptRepository {
 
   /// GET: Mengambil daftar nota dari Supabase PostgreSQL (atau fallback SQLite lokal / HTTP Client jika disediakan)
   Future<List<Receipt>> getReceipts() async {
+    AppLogger.info('RECEIPT', 'Memuat daftar nota...');
     final httpClient = _httpClient;
     if (httpClient != null) {
       try {
@@ -149,6 +153,7 @@ class ReceiptRepository {
     required String fotoPath,
     String? fotoKartuGaransiPath,
   }) async {
+    AppLogger.info('RECEIPT', 'Menyimpan nota baru: $namaBarang');
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
     final resolvedCardPath = fotoKartuGaransiPath != null && fotoKartuGaransiPath.isNotEmpty
         ? await uploadImageIfNeeded(fotoKartuGaransiPath)
@@ -219,6 +224,7 @@ class ReceiptRepository {
     required String fotoPath,
     String? fotoKartuGaransiPath,
   }) async {
+    AppLogger.info('RECEIPT', 'Memperbarui nota ID: $id ($namaBarang)');
     final resolvedImagePath = await uploadImageIfNeeded(fotoPath);
     final resolvedCardPath = fotoKartuGaransiPath != null && fotoKartuGaransiPath.isNotEmpty
         ? await uploadImageIfNeeded(fotoKartuGaransiPath)
@@ -274,6 +280,7 @@ class ReceiptRepository {
 
   /// DELETE: Menghapus nota dari Supabase PostgreSQL (atau fallback SQLite)
   Future<int> deleteReceipt(int id) async {
+    AppLogger.info('RECEIPT', 'Menghapus nota ID: $id');
     final sb = _supabase;
     if (sb != null) {
       try {

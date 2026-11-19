@@ -3,6 +3,7 @@ import '../../domain/category.dart';
 import '../../domain/receipt.dart';
 import '../../services/receipt_repository.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/app_logger.dart';
 
 import 'receipt_list_notifier.dart';
 
@@ -193,7 +194,8 @@ class AddReceiptNotifier extends Notifier<AddReceiptState> {
       // Setelah sukses disimpan, setel kembali isSubmitting.
       state = state.copyWith(isSubmitting: false);
       return savedReceipt;
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('RECEIPT', 'Gagal submit form nota: $e', e, stack);
       // Jika terjadi error dari layer network saat menyimpan, tampilkan error validasi (untuk di-handle oleh UI).
       state = state.copyWith(
         isSubmitting: false,

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'app_logger.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -43,11 +44,13 @@ class NotificationService {
         },
       );
       _isInitialized = true;
+      AppLogger.info('NOTIFICATION', 'NotificationService berhasil diinisialisasi.');
       debugPrint('NotificationService initialized successfully.');
 
       // Meminta izin notifikasi untuk Android 13+ (API 33+)
       await requestPermissions();
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('NOTIFICATION', 'Gagal inisialisasi NotificationService: $e', e, stack);
       debugPrint('Error initializing NotificationService: $e');
     }
   }
@@ -199,10 +202,12 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
+      AppLogger.info('NOTIFICATION', 'Notifikasi terjadwal diset untuk $productName pada $scheduledTZ (ID: $notifId)');
       debugPrint(
         'Scheduled notification set for $productName at $scheduledTZ (ID: $notifId)',
       );
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('NOTIFICATION', 'Gagal menjadwalkan notifikasi: $e', e, stack);
       debugPrint('Failed to schedule notification: $e');
     }
   }
@@ -212,8 +217,10 @@ class NotificationService {
     try {
       final notifId = receiptId.abs() % 100000;
       await flutterLocalNotificationsPlugin.cancel(id: notifId);
+      AppLogger.info('NOTIFICATION', 'Membatalkan notifikasi ID: $notifId (Nota: $receiptId)');
       debugPrint('Cancelled notification ID: $notifId');
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('NOTIFICATION', 'Gagal membatalkan notifikasi: $e', e, stack);
       debugPrint('Failed to cancel notification: $e');
     }
   }

@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
+import '../../../../core/services/app_logger.dart';
 import '../../../../core/utils/input_validator.dart';
 import '../../../../core/widgets/customer_service_button.dart';
 import '../../../receipts/presentation/screens/home_screen.dart';
@@ -70,6 +71,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Memulai proses autentikasi biometrik / PIN
+      AppLogger.info('AUTH', 'Memulai autentikasi biometrik/PIN perangkat...');
       final bool didAuthenticate = await _auth.authenticate(
         localizedReason:
             'Pindai biometrik atau masukkan PIN untuk masuk ke SimpanNota',
@@ -83,12 +85,14 @@ class _AuthScreenState extends State<AuthScreen> {
       });
 
       if (didAuthenticate) {
+        AppLogger.info('AUTH', 'Autentikasi biometrik/PIN berhasil.');
         // Autentikasi Sukses: Masuk ke Dashboard (HomeScreen) dengan animasi Fade
         Navigator.pushReplacement(
           context,
           FadePageRoute(page: const HomeScreen()),
         );
       } else {
+        AppLogger.warning('AUTH', 'Autentikasi biometrik/PIN dibatalkan pengguna.');
         // Pengguna membatalkan proses pemindaian (cancel)
         setState(() {
           _errorMessage = 'Autentikasi dibatalkan oleh pengguna. Silakan pindai ulang untuk masuk.';
@@ -661,6 +665,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!SupabaseConstants.isConfigured) {
       // Fallback untuk testing jika Supabase belum terhubung
       if (!mounted) return;
+      AppLogger.info('AUTH', 'Login berhasil menggunakan mode testing offline.');
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -687,12 +692,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      AppLogger.info('AUTH', 'Mencoba login email: $email');
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
       if (response.user != null && mounted) {
+        AppLogger.info('AUTH', 'Login Supabase berhasil untuk user ID: ${response.user?.id}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -716,7 +723,8 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       }
-    } on AuthException catch (e) {
+    } on AuthException catch (e, stack) {
+      AppLogger.error('AUTH', 'Gagal login AuthException: ${e.message}', e, stack);
       if (!mounted) return;
       final msg = e.message.toLowerCase();
       String userMessage = e.message;
@@ -800,14 +808,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      AppLogger.info('AUTH', 'Memulai alur Google OAuth Sign-In...');
       final success = await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb ? null : 'io.supabase.simpannota://login-callback',
       );
       if (!success && mounted) {
+        AppLogger.warning('AUTH', 'Google OAuth tidak dapat dilanjutkan.');
         setState(() => _isLoading = false);
       }
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('AUTH', 'Gagal login Google OAuth: $e', e, stack);
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1639,7 +1650,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           (route) => false,
         );
       }
-    } on AuthException catch (e) {
+    } on AuthException catch (e, stack) {
+      AppLogger.error('AUTH', 'Gagal login AuthException: ${e.message}', e, stack);
       if (!mounted) return;
       final msg = e.message.toLowerCase();
       String userMessage = e.message;
@@ -1721,14 +1733,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
+      AppLogger.info('AUTH', 'Memulai alur Google OAuth Sign-In...');
       final success = await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb ? null : 'io.supabase.simpannota://login-callback',
       );
       if (!success && mounted) {
+        AppLogger.warning('AUTH', 'Google OAuth tidak dapat dilanjutkan.');
         setState(() => _isLoading = false);
       }
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('AUTH', 'Gagal login Google OAuth: $e', e, stack);
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

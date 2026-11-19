@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
+import '../../../../core/services/app_logger.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../domain/warranty_status.dart';
 import '../../domain/receipt.dart';
@@ -548,11 +549,13 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
   }
 
   Future<void> _sendTelegramReminder(BuildContext context, Receipt receipt) async {
+    AppLogger.info('TELEGRAM', 'Memeriksa ketersediaan aplikasi Telegram...');
     // 1. Deteksi apakah aplikasi Telegram terpasang
     final tgSchemeUri = Uri.parse('tg://resolve');
     final isInstalled = await canLaunchUrl(tgSchemeUri);
 
     if (!isInstalled) {
+      AppLogger.warning('TELEGRAM', 'Aplikasi Telegram tidak terpasang di perangkat.');
       if (!context.mounted) return;
       showDialog(
         context: context,
@@ -654,12 +657,14 @@ _Pesan ini dikirimkan otomatis melalui aplikasi SimpanNota untuk mengamankan buk
     final tgWebUri = Uri.parse('https://t.me/share/url?url=&text=$encoded');
 
     try {
+      AppLogger.info('TELEGRAM', 'Membuka aplikasi Telegram untuk pesan pengingat: ${receipt.productName}');
       if (await canLaunchUrl(tgMsgUri)) {
         await launchUrl(tgMsgUri, mode: LaunchMode.externalApplication);
       } else {
         await launchUrl(tgWebUri, mode: LaunchMode.externalApplication);
       }
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('TELEGRAM', 'Gagal meluncurkan Telegram: $e', e, stack);
       if (context.mounted) {
         AppSnackBar.showError(context, 'Tidak dapat membuka Telegram: $e');
       }

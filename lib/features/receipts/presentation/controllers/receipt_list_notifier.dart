@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/receipt.dart';
 import '../../services/receipt_repository.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/app_logger.dart';
 import '../../domain/category.dart';
 
 enum ReceiptSortOption {
@@ -99,7 +100,8 @@ class ReceiptListNotifier extends AsyncNotifier<List<Receipt>> {
       await repository.deleteReceipt(id);
       await NotificationService().cancelNotification(id);
       await loadReceipts(); // refresh list
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('RECEIPT', 'Gagal deleteReceipt: $e', e, stack);
       // Handle error visually if necessary
     }
   }
