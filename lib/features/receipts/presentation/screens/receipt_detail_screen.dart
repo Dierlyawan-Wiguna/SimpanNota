@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../../../../core/navigation/fade_page_route.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import '../../domain/warranty_status.dart';
 import '../../domain/receipt.dart';
 
@@ -457,16 +458,16 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Task 5: Kartu Pengingat Garansi WhatsApp Otomatis
+                  // Task 5: Kartu Pengingat Garansi Telegram Otomatis
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color: const Color(0xFFE8F5FD),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.shade200),
+                      border: Border.all(color: const Color(0xFFBCE1F9)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.green.withValues(alpha: 0.08),
+                          color: const Color(0xFF0088CC).withValues(alpha: 0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -480,10 +481,10 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF25D366),
+                                color: const Color(0xFF0088CC),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.chat_rounded, color: Colors.white, size: 20),
+                              child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                             ),
                             const SizedBox(width: 12),
                             const Expanded(
@@ -491,16 +492,16 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Pengingat Garansi WhatsApp',
+                                    'Pengingat Garansi Telegram',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
-                                      color: Color(0xFF075E54),
+                                      color: Color(0xFF006699),
                                     ),
                                   ),
                                   SizedBox(height: 2),
                                   Text(
-                                    'Kirim rincian masa aktif garansi barang ini langsung ke WhatsApp.',
+                                    'Kirim rincian masa aktif garansi barang ini langsung ke Telegram.',
                                     style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.3),
                                   ),
                                 ],
@@ -509,22 +510,27 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _sendWhatsAppReminder(context, receipt),
-                            icon: const Icon(Icons.send_rounded, size: 18),
-                            label: const Text(
-                              'Kirim Pengingat ke WhatsApp',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF25D366),
-                              foregroundColor: Colors.white,
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        Semantics(
+                          button: true,
+                          label: 'Kirim Pengingat ke Telegram',
+                          hint: 'Membuka aplikasi Telegram untuk mengirimkan rincian masa aktif garansi',
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _sendTelegramReminder(context, receipt),
+                              icon: const Icon(Icons.send_rounded, size: 18),
+                              label: const Text(
+                                'Kirim Pengingat ke Telegram',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0088CC),
+                                foregroundColor: Colors.white,
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ),
@@ -541,10 +547,65 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
     );
   }
 
-  Future<void> _sendWhatsAppReminder(BuildContext context, Receipt receipt) async {
-    String? userPhone;
-    String userName = 'Pengguna SimpanNota';
+  Future<void> _sendTelegramReminder(BuildContext context, Receipt receipt) async {
+    // 1. Deteksi apakah aplikasi Telegram terpasang
+    final tgSchemeUri = Uri.parse('tg://resolve');
+    final isInstalled = await canLaunchUrl(tgSchemeUri);
 
+    if (!isInstalled) {
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFF0088CC), size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Telegram Belum Terpasang',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Aplikasi Telegram dibutuhkan untuk mengirim dan menerima pengingat garansi secara otomatis. Silakan unduh Telegram melalui Google Play Store.',
+            style: TextStyle(fontSize: 14, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Batal', style: TextStyle(color: AppColors.textGrey)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                final playStoreUri = Uri.parse(
+                  'https://play.google.com/store/apps/details?id=org.telegram.messenger',
+                );
+                if (await canLaunchUrl(playStoreUri)) {
+                  await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Download Telegram'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0088CC),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    String userName = 'Pengguna SimpanNota';
     if (SupabaseConstants.isConfigured) {
       try {
         final user = Supabase.instance.client.auth.currentUser;
@@ -553,10 +614,6 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
           final name = meta?['full_name'] ?? meta?['name'];
           if (name != null && name.toString().isNotEmpty) {
             userName = name.toString();
-          }
-          final phone = user.phone ?? meta?['phone'];
-          if (phone != null && phone.toString().isNotEmpty) {
-            userPhone = phone.toString().replaceAll(RegExp(r'[^0-9]'), '');
           }
         }
       } catch (_) {}
@@ -593,29 +650,18 @@ Berikut adalah pengingat status masa garansi barang Anda:
 _Pesan ini dikirimkan otomatis melalui aplikasi SimpanNota untuk mengamankan bukti klaim garansi Anda._'''.trim();
 
     final encoded = Uri.encodeComponent(message);
-    Uri waUri;
-
-    if (userPhone != null && userPhone.isNotEmpty) {
-      waUri = Uri.parse('https://wa.me/$userPhone?text=$encoded');
-    } else {
-      waUri = Uri.parse('https://api.whatsapp.com/send?text=$encoded');
-    }
+    final tgMsgUri = Uri.parse('tg://msg?text=$encoded');
+    final tgWebUri = Uri.parse('https://t.me/share/url?url=&text=$encoded');
 
     try {
-      final canLaunch = await canLaunchUrl(waUri);
-      if (canLaunch) {
-        await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(tgMsgUri)) {
+        await launchUrl(tgMsgUri, mode: LaunchMode.externalApplication);
       } else {
-        await launchUrl(waUri, mode: LaunchMode.platformDefault);
+        await launchUrl(tgWebUri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Tidak dapat membuka WhatsApp: $e'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
+        AppSnackBar.showError(context, 'Tidak dapat membuka Telegram: $e');
       }
     }
   }

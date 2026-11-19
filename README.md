@@ -19,7 +19,7 @@ Masyarakat sering gagal melakukan klaim garansi karena struk fisik/kartu garansi
 ### 4. Daftar Fitur Inti
 * **Unggah Foto Nota/Kartu Garansi:** Mengambil foto struk belanja menggunakan kamera HP atau memilih dari galeri.
 * **Pencatatan Detail Produk:** Input manual nama barang, toko, tanggal pembelian, dan durasi garansi.
-* **Pengingat Kedaluwarsa Garansi:** Notifikasi otomatis di HP ketika masa garansi akan habis (H-7 atau H-1).
+* **Pengingat Kedaluwarsa Garansi:** Notifikasi pengingat garansi otomatis gratis via Telegram Bot API (H-30 & H-7) serta notifikasi lokal di perangkat.
 * **Daftar & Kategori Barang:** Mengelompokkan barang berdasarkan kategori (Elektronik, Kendaraan, Pakaian, dll) dengan fitur pencarian.
 
 ### 5. Fitur yang Tidak Dikerjakan (Out of Scope)
@@ -30,7 +30,7 @@ Masyarakat sering gagal melakukan klaim garansi karena struk fisik/kartu garansi
 ### 6. Kriteria Aplikasi Dinyatakan Berhasil
 * **Fungsional:** Pengguna berhasil mengambil foto nota, mengisi data garansi, dan menyimpannya tanpa eror.
 * **Navigasi:** Pengguna dapat mencari barang berdasarkan kategori dalam waktu kurang dari 5 detik.
-* **Notifikasi:** Sistem pengingat waktu garansi berfungsi memberikan notifikasi lokal di perangkat secara tepat.
+* **Notifikasi:** Sistem pengingat waktu garansi via Telegram Bot API & notifikasi lokal perangkat berfungsi memberikan pengingat secara tepat.
 
 ### Project Simpan Nota
 * **Nama:** Dierlyawan Wiguna

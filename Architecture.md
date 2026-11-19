@@ -160,12 +160,25 @@ with check (auth.uid() = user_id);
 * Delete action flow: confirmation dialog -> cancel local notifications -> remove storage image -> delete database row.
 ---
 
-## Local Notification System
-## Local Notification System (Scheduling & Rescheduling Rules)
-* Service class managing `flutter_local_notifications` and `timezone`.
+---
+
+## Notification & Warranty Reminder System
+
+### 1. Telegram Bot API Integration (Cloud Backend & Edge Function)
+* **Automatic Reminder Mechanism**: Powered by Supabase Edge Function (`supabase/functions/send-warranty-reminder/index.ts`).
+* **Trigger Schedule**: Automated reminder alerts triggered at **H-30** and **H-7** before receipt warranty expires.
+* **Recipient Targeting**: Evaluates `profiles(telegram_chat_id, name)` where `telegram_chat_id` is non-null and numeric.
+* **Direct Manual Reminder**: On `ReceiptDetailScreen`, users can tap **"Kirim Pengingat ke Telegram"** (`Color(0xFF0088CC)`):
+  * **App Detection**: Checks Telegram presence via `canLaunchUrl(Uri.parse('tg://resolve'))`.
+  * **If Not Installed**: Prompts informative `AlertDialog` with direct Google Play Store download action.
+  * **If Installed**: Deep-links to Telegram message intent with structured markdown summary.
+
+### 2. Local Device Notification System (Offline Fallback)
+* Service class managing `flutter_local_notifications` and `timezone` (`lib/core/services/notification_service.dart`).
+* Serves as local fallback for offline usage or users who have not yet linked their Telegram Chat ID.
 * Unique Notification ID convention: uses deterministic integer hashing from `receipt.id` (e.g., `id.hashCode` for H-7 notification, and `id.hashCode + 1` for H-1 notification).
 * **Rescheduling Rules (On Edit):**
-  * When a user updates `tanggalBeli` or `durasiGaransiBulan`, the system must cancel existing notification IDs first.
+  * When a user updates `tanggalBeli` or `durasiGaransiBulan`, the system cancels existing notification IDs first.
   * Recompute expiration date and schedule new H-7 and H-1 local alerts.
 * **Cancellation Rules (On Delete):**
   * When a receipt is deleted, the system immediately invokes `cancel(id.hashCode)` and `cancel(id.hashCode + 1)`.

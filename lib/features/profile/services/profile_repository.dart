@@ -38,10 +38,34 @@ class ProfileRepository {
     return UserProfile.fromSupabaseUser(user);
   }
 
-  /// Memperbarui nama dan nomor telepon pada metadata akun Supabase
+  /// Mengambil profil pengguna secara asynchronous termasuk tabel profiles (jika ada)
+  Future<UserProfile> fetchProfile() async {
+    final sb = _supabase;
+    if (sb == null) return getCurrentProfile();
+    final user = sb.auth.currentUser;
+    if (user == null) return UserProfile.guest();
+
+    try {
+      final data = await sb.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (data != null) {
+        final profile = UserProfile.fromSupabaseUser(user);
+        return profile.copyWith(
+          displayName: data['name']?.toString() ?? profile.displayName,
+          phone: data['phone']?.toString() ?? profile.phone,
+          telegramChatId: data['telegram_chat_id']?.toString() ?? profile.telegramChatId,
+          avatarUrl: data['avatar_url']?.toString() ?? profile.avatarUrl,
+        );
+      }
+    } catch (_) {}
+
+    return UserProfile.fromSupabaseUser(user);
+  }
+
+  /// Memperbarui nama, nomor telepon, dan Telegram Chat ID pada metadata akun Supabase & tabel profiles
   Future<void> updateProfile({
     required String displayName,
     String? phone,
+    String? telegramChatId,
   }) async {
     final sb = _supabase;
     if (sb == null) return;
@@ -52,11 +76,32 @@ class ProfileRepository {
     updatedData['full_name'] = displayName;
     if (phone != null && phone.isNotEmpty) {
       updatedData['phone'] = phone;
+    } else {
+      updatedData.remove('phone');
+    }
+
+    if (telegramChatId != null && telegramChatId.trim().isNotEmpty) {
+      updatedData['telegram_chat_id'] = telegramChatId.trim();
+    } else {
+      updatedData.remove('telegram_chat_id');
     }
 
     await sb.auth.updateUser(
       UserAttributes(data: updatedData),
     );
+
+    // Sinkronisasi ke tabel database profiles
+    try {
+      await sb.from('profiles').upsert({
+        'id': user.id,
+        'name': displayName,
+        'phone': phone,
+        'telegram_chat_id': (telegramChatId != null && telegramChatId.trim().isNotEmpty)
+            ? telegramChatId.trim()
+            : null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    } catch (_) {}
   }
 
   /// Memperbarui atau menghapus URL foto avatar profil pada metadata Supabase

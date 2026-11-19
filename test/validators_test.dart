@@ -81,6 +81,23 @@ void main() {
         isNull,
       );
     });
+
+    test('4. validateTelegramChatId: memvalidasi Telegram Chat ID (opsional, hanya angka)', () {
+      // Kasus kosong / null (opsional) -> harus valid (null)
+      expect(ProfileValidator.validateTelegramChatId(null), isNull);
+      expect(ProfileValidator.validateTelegramChatId(''), isNull);
+      expect(ProfileValidator.validateTelegramChatId('   '), isNull);
+
+      // Kasus valid (hanya angka)
+      expect(ProfileValidator.validateTelegramChatId('123456789'), isNull);
+      expect(ProfileValidator.validateTelegramChatId('9876543210'), isNull);
+
+      // Kasus non-angka (huruf, simbol, atau kombinasi)
+      expect(ProfileValidator.validateTelegramChatId('abc'), 'Telegram Chat ID hanya boleh berupa angka.');
+      expect(ProfileValidator.validateTelegramChatId('123a456'), 'Telegram Chat ID hanya boleh berupa angka.');
+      expect(ProfileValidator.validateTelegramChatId('@username'), 'Telegram Chat ID hanya boleh berupa angka.');
+      expect(ProfileValidator.validateTelegramChatId('123-456'), 'Telegram Chat ID hanya boleh berupa angka.');
+    });
   });
 }
 

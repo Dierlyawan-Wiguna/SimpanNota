@@ -8,6 +8,7 @@ class UserProfile {
   final String displayName;
   final String email;
   final String phone;
+  final String? telegramChatId;
   final String? avatarUrl;
   final DateTime registrationDate;
   final String authProvider;
@@ -17,6 +18,7 @@ class UserProfile {
     required this.displayName,
     required this.email,
     required this.phone,
+    this.telegramChatId,
     this.avatarUrl,
     required this.registrationDate,
     required this.authProvider,
@@ -45,10 +47,52 @@ class UserProfile {
       displayName: 'Pengguna Tamu',
       email: 'tamu@simpannota.local',
       phone: '-',
+      telegramChatId: null,
       avatarUrl: null,
       registrationDate: DateTime.now(),
       authProvider: 'Offline',
     );
+  }
+
+  /// Membuat UserProfile dari Map/JSON
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+    if (json['registration_date'] != null) {
+      parsedDate = DateTime.tryParse(json['registration_date'].toString()) ?? DateTime.now();
+    } else if (json['registrationDate'] != null) {
+      parsedDate = DateTime.tryParse(json['registrationDate'].toString()) ?? DateTime.now();
+    } else {
+      parsedDate = DateTime.now();
+    }
+
+    return UserProfile(
+      id: json['id']?.toString() ?? '',
+      displayName: json['displayName']?.toString() ??
+          json['display_name']?.toString() ??
+          json['name']?.toString() ??
+          'Pengguna SimpanNota',
+      email: json['email']?.toString() ?? '-',
+      phone: json['phone']?.toString() ?? '-',
+      telegramChatId: json['telegram_chat_id']?.toString() ?? json['telegramChatId']?.toString(),
+      avatarUrl: json['avatar_url']?.toString() ?? json['avatarUrl']?.toString(),
+      registrationDate: parsedDate,
+      authProvider: json['auth_provider']?.toString() ?? json['authProvider']?.toString() ?? 'Email & Kata Sandi',
+    );
+  }
+
+  /// Serialisasi ke Map/JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'displayName': displayName,
+      'name': displayName,
+      'email': email,
+      'phone': phone,
+      'telegram_chat_id': telegramChatId,
+      'avatar_url': avatarUrl,
+      'registration_date': registrationDate.toIso8601String(),
+      'auth_provider': authProvider,
+    };
   }
 
   /// Membuat UserProfile dari objek User Supabase
@@ -72,6 +116,11 @@ class UserProfile {
       phone = metadata['phone'].toString();
     }
 
+    final rawTgId = metadata?['telegram_chat_id'] ?? metadata?['telegramChatId'];
+    final String? tgId = (rawTgId != null && rawTgId.toString().trim().isNotEmpty)
+        ? rawTgId.toString().trim()
+        : null;
+
     final avatar = metadata?['avatar_url'] ?? metadata?['picture'];
     final avatarUrl = (avatar != null && avatar.toString().trim().isNotEmpty)
         ? avatar.toString().trim()
@@ -93,6 +142,7 @@ class UserProfile {
       displayName: name,
       email: user.email ?? '-',
       phone: phone,
+      telegramChatId: tgId,
       avatarUrl: avatarUrl,
       registrationDate: regDate,
       authProvider: provider,
@@ -104,6 +154,7 @@ class UserProfile {
     String? displayName,
     String? email,
     String? phone,
+    String? telegramChatId,
     String? avatarUrl,
     DateTime? registrationDate,
     String? authProvider,
@@ -113,10 +164,10 @@ class UserProfile {
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      telegramChatId: telegramChatId ?? this.telegramChatId,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       registrationDate: registrationDate ?? this.registrationDate,
       authProvider: authProvider ?? this.authProvider,
     );
   }
 }
-

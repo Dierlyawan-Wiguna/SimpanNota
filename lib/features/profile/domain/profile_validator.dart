@@ -41,6 +41,20 @@ class ProfileValidator {
     return InputValidator.formatIndonesianPhone(rawPhone);
   }
 
+  /// Validasi Telegram Chat ID.
+  /// Opsional (boleh kosong atau null), namun jika diisi wajib berupa angka saja (numeric ID).
+  static String? validateTelegramChatId(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final clean = value.trim();
+    final numericRegex = RegExp(r'^[0-9]+$');
+    if (!numericRegex.hasMatch(clean)) {
+      return 'Telegram Chat ID hanya boleh berupa angka.';
+    }
+    return null;
+  }
+
   /// Validasi pengubahan kata sandi akun
   static String? validatePasswordChange({
     required String? newPassword,

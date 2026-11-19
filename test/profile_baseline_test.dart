@@ -58,14 +58,14 @@ void main() {
 
       // Memastikan dialog Ubah Profil muncul
       expect(find.text('Ubah Profil'), findsOneWidget);
-      expect(find.text('Nomor Telepon (WhatsApp)'), findsOneWidget);
+      expect(find.text('Telegram Chat ID (Opsional)'), findsOneWidget);
       expect(find.text('Batal'), findsOneWidget);
       expect(find.text('Simpan'), findsOneWidget);
 
       // Tutup dialog
       await tester.tap(find.text('Batal'));
       await tester.pumpAndSettle();
-      expect(find.text('Nomor Telepon (WhatsApp)'), findsNothing);
+      expect(find.text('Telegram Chat ID (Opsional)'), findsNothing);
     });
 
     testWidgets('3. ProfileScreen membuka dialog Ubah Kata Sandi saat tombol ditekan', (tester) async {

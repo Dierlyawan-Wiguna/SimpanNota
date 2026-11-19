@@ -418,6 +418,17 @@ class WelcomeScreen extends StatelessWidget {
                 title: 'Penyimpanan Akun & Cloud',
                 description: 'Arsip nota tersimpan rapi dan tersinkronisasi aman ke akun Anda.',
               ),
+              const SizedBox(height: 10),
+              Semantics(
+                label: 'Fitur Pengingat Garansi Otomatis Gratis via Telegram H-30 & H-7',
+                child: _buildFeatureItem(
+                  icon: Icons.send_rounded,
+                  iconColor: const Color(0xFF0088CC),
+                  bgColor: const Color(0xFFE8F5FD),
+                  title: 'Pengingat Garansi via Telegram',
+                  description: 'Pengingat Garansi Otomatis Gratis via Telegram (H-30 & H-7) langsung ke akun Anda.',
+                ),
+              ),
 
               const SizedBox(height: 32),
 
@@ -1084,7 +1095,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppColors.textDark,
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 18),
+
+              // Banner Informasi Pengingat Garansi Telegram
+              Semantics(
+                label: 'Informasi Fitur Pengingat Garansi Otomatis Gratis via Telegram H-30 & H-7',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5FD),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFBCE1F9)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.send_rounded, color: Color(0xFF0088CC), size: 18),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Pengingat Garansi Otomatis Gratis via Telegram (H-30 & H-7)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF006699),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
 
               if (_errorMessage != null)
                 Container(

@@ -184,10 +184,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       initialName: _getDisplayName(),
       initialPhone: _getPhoneNumber(),
+      initialTelegramChatId: _profile.telegramChatId,
       onSubmit: (data) async {
         await ref.read(profileRepositoryProvider).updateProfile(
           displayName: data.name,
           phone: data.phone,
+          telegramChatId: data.telegramChatId,
         );
         _loadUserData();
         if (mounted) {
@@ -474,6 +476,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     icon: Icons.phone_rounded,
                     label: 'Nomor Telepon',
                     value: phone,
+                    showEditHint: true,
+                    onTap: _editProfileDialog,
+                  ),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                  _buildProfileTile(
+                    icon: Icons.send_rounded,
+                    label: 'Telegram Chat ID',
+                    value: _profile.telegramChatId ?? 'Belum terhubung',
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
