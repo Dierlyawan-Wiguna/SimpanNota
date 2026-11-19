@@ -13,6 +13,7 @@ import '../../domain/user_profile.dart';
 import '../../services/profile_repository.dart';
 import '../widgets/password_form_dialog.dart';
 import '../widgets/profile_form.dart';
+import 'system_log_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -91,10 +92,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     color: AppColors.lightBlue,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryBlue),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
-                title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Gunakan kamera ponsel untuk swafoto langsung', style: TextStyle(fontSize: 12)),
+                title: const Text(
+                  'Ambil dari Kamera',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  'Gunakan kamera ponsel untuk swafoto langsung',
+                  style: TextStyle(fontSize: 12),
+                ),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
               ListTile(
@@ -104,10 +114,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     color: AppColors.lightBlue,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primaryBlue),
+                  child: const Icon(
+                    Icons.photo_library_rounded,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
-                title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Pilih foto yang sudah ada di penyimpanan ponsel', style: TextStyle(fontSize: 12)),
+                title: const Text(
+                  'Pilih dari Galeri',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  'Pilih foto yang sudah ada di penyimpanan ponsel',
+                  style: TextStyle(fontSize: 12),
+                ),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
               if (_getAvatarUrl() != null)
@@ -118,16 +137,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                    ),
                   ),
-                  title: const Text('Hapus Foto Profil', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
-                  subtitle: const Text('Gunakan inisial nama sebagai avatar bawaan', style: TextStyle(fontSize: 12)),
+                  title: const Text(
+                    'Hapus Foto Profil',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Gunakan inisial nama sebagai avatar bawaan',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   onTap: () async {
                     Navigator.pop(ctx);
                     setState(() {
                       _localAvatarPath = null;
                     });
-                    await ref.read(profileRepositoryProvider).updateAvatar(null);
+                    await ref
+                        .read(profileRepositoryProvider)
+                        .updateAvatar(null);
                     _loadUserData();
                   },
                 ),
@@ -154,7 +187,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _loadUserData();
 
           if (mounted) {
-            AppSnackBar.showSuccess(context, 'Foto profil berhasil diperbarui!');
+            AppSnackBar.showSuccess(
+              context,
+              'Foto profil berhasil diperbarui!',
+            );
           }
         }
       } catch (e) {
@@ -186,11 +222,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       initialPhone: _getPhoneNumber(),
       initialTelegramChatId: _profile.telegramChatId,
       onSubmit: (data) async {
-        await ref.read(profileRepositoryProvider).updateProfile(
-          displayName: data.name,
-          phone: data.phone,
-          telegramChatId: data.telegramChatId,
-        );
+        await ref
+            .read(profileRepositoryProvider)
+            .updateProfile(
+              displayName: data.name,
+              phone: data.phone,
+              telegramChatId: data.telegramChatId,
+            );
         _loadUserData();
         if (mounted) {
           AppSnackBar.showSuccess(context, 'Profil berhasil diperbarui!');
@@ -204,7 +242,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Keluar dari Akun?'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun SimpanNota?'),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun SimpanNota?',
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         actions: [
           TextButton(
@@ -284,10 +324,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primaryNavy,
-                    AppColors.primaryBlue,
-                  ],
+                  colors: [AppColors.primaryNavy, AppColors.primaryBlue],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
@@ -321,34 +358,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: ClipOval(
                           child: avatarUrl != null
                               ? (avatarUrl.startsWith('http')
-                                  ? Image.network(
-                                      avatarUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Center(
-                                        child: Text(
-                                          initials,
-                                          style: const TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w900,
-                                            color: AppColors.primaryBlue,
+                                    ? Image.network(
+                                        avatarUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Center(
+                                          child: Text(
+                                            initials,
+                                            style: const TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w900,
+                                              color: AppColors.primaryBlue,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    )
-                                  : Image.file(
-                                      File(avatarUrl),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Center(
-                                        child: Text(
-                                          initials,
-                                          style: const TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w900,
-                                            color: AppColors.primaryBlue,
+                                      )
+                                    : Image.file(
+                                        File(avatarUrl),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Center(
+                                          child: Text(
+                                            initials,
+                                            style: const TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w900,
+                                              color: AppColors.primaryBlue,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ))
+                                      ))
                               : Center(
                                   child: Text(
                                     initials,
@@ -409,7 +446,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 12),
                   // Badge Provider (Google / Email)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
@@ -418,7 +458,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          provider.contains('Google') ? Icons.g_mobiledata_rounded : Icons.mail_outline_rounded,
+                          provider.contains('Google')
+                              ? Icons.g_mobiledata_rounded
+                              : Icons.mail_outline_rounded,
                           color: Colors.white,
                           size: 18,
                         ),
@@ -446,7 +488,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : AppColors.cardBorder,
                 ),
                 boxShadow: const [
                   BoxShadow(
@@ -465,13 +509,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
-                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                  Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : AppColors.cardBorder,
+                  ),
                   _buildProfileTile(
                     icon: Icons.email_rounded,
                     label: 'Email Terdaftar',
                     value: email,
                   ),
-                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                  Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : AppColors.cardBorder,
+                  ),
                   _buildProfileTile(
                     icon: Icons.phone_rounded,
                     label: 'Nomor Telepon',
@@ -479,7 +537,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
-                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                  Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : AppColors.cardBorder,
+                  ),
                   _buildProfileTile(
                     icon: Icons.send_rounded,
                     label: 'Telegram Chat ID',
@@ -487,7 +552,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     showEditHint: true,
                     onTap: _editProfileDialog,
                   ),
-                  Divider(height: 1, indent: 56, endIndent: 16, color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
+                  Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : AppColors.cardBorder,
+                  ),
                   _buildProfileTile(
                     icon: Icons.calendar_today_rounded,
                     label: 'Tanggal Mendaftar',
@@ -505,7 +577,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : AppColors.cardBorder,
                 ),
                 boxShadow: const [
                   BoxShadow(
@@ -516,17 +590,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : AppColors.lightBlue,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        isDark
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
                         color: isDark ? Colors.amber : AppColors.primaryBlue,
                         size: 20,
                       ),
@@ -551,7 +632,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 : 'Tampilan terang default',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : AppColors.textGrey,
                             ),
                           ),
                         ],
@@ -561,12 +644,84 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       value: ref.watch(themeModeProvider) == ThemeMode.dark,
                       activeTrackColor: const Color(0xFF38BDF8),
                       onChanged: (val) {
-                        ref.read(themeModeProvider.notifier).setTheme(
-                              val ? ThemeMode.dark : ThemeMode.light,
-                            );
+                        ref
+                            .read(themeModeProvider.notifier)
+                            .setTheme(val ? ThemeMode.dark : ThemeMode.light);
                       },
                     ),
                   ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Card Diagnostics / Log Sistem (Pertemuan 10)
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : AppColors.cardBorder,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.shadowColor,
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : AppColors.lightBlue,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.terminal_rounded,
+                      color: AppColors.primaryBlue,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Log Sistem & Diagnostik',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.textDark,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Lihat dan salin tracing error runtime aplikasi',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : AppColors.textGrey,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.textGrey,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SystemLogScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -585,7 +740,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.notifications_active_outlined, color: Colors.amber.shade800, size: 22),
+                    Icon(
+                      Icons.notifications_active_outlined,
+                      color: Colors.amber.shade800,
+                      size: 22,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -601,15 +760,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Lengkapi nomor WhatsApp agar bisa menerima notifikasi pengingat garansi.',
-                            style: TextStyle(fontSize: 11, color: Colors.amber.shade900),
+                            'Lengkapi nomor telepon atau Telegram Chat ID agar bisa menerima notifikasi pengingat garansi.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.amber.shade900,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     TextButton(
                       onPressed: _editProfileDialog,
-                      child: const Text('Isi Sekarang', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Isi Sekarang',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -629,8 +794,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryNavy,
-                    side: const BorderSide(color: AppColors.cardBorder, width: 1.3),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: const BorderSide(
+                      color: AppColors.cardBorder,
+                      width: 1.3,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -702,7 +872,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : AppColors.textGrey,
                     ),
                   ),
                   const SizedBox(height: 3),
