@@ -20,13 +20,16 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           try {
             await db.execute('ALTER TABLE receipts ADD COLUMN warrantyDays INTEGER NOT NULL DEFAULT 0');
           } catch (_) {}
+        }
+        if (oldVersion < 3) {
+          await _createSystemLogsTable(db);
         }
       },
       onOpen: (db) async {
@@ -36,8 +39,23 @@ class DatabaseHelper {
         try {
           await db.execute('ALTER TABLE receipts ADD COLUMN warrantyCardPath TEXT');
         } catch (_) {}
+        await _createSystemLogsTable(db);
       },
     );
+  }
+
+  Future<void> _createSystemLogsTable(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS system_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  level TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  message TEXT NOT NULL,
+  error TEXT,
+  stackTrace TEXT
+)
+''');
   }
 
   Future _createDB(Database db, int version) async {
@@ -54,6 +72,7 @@ CREATE TABLE receipts (
   warrantyCardPath TEXT
 )
 ''');
+    await _createSystemLogsTable(db);
   }
 
   Future<Receipt> insertReceipt(Receipt receipt) async {
@@ -86,6 +105,47 @@ CREATE TABLE receipts (
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // --- Runtime System Logs Management (Pertemuan 10) ---
+
+  Future<int> insertSystemLog(Map<String, dynamic> logMap) async {
+    final db = await instance.database;
+    final id = await db.insert('system_logs', logMap);
+
+    // Otomatis rotasi log: Pertahankan maksimal 500 entri terbaru
+    await db.rawDelete('''
+      DELETE FROM system_logs 
+      WHERE id NOT IN (
+        SELECT id FROM system_logs ORDER BY id DESC LIMIT 500
+      )
+    ''');
+
+    return id;
+  }
+
+  Future<List<Map<String, dynamic>>> getSystemLogs({
+    String? level,
+    int limit = 500,
+  }) async {
+    final db = await instance.database;
+    final where = (level != null && level.isNotEmpty && level != 'ALL')
+        ? 'level = ?'
+        : null;
+    final whereArgs = where != null ? [level] : null;
+
+    return await db.query(
+      'system_logs',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'id DESC',
+      limit: limit,
+    );
+  }
+
+  Future<int> clearSystemLogs() async {
+    final db = await instance.database;
+    return await db.delete('system_logs');
   }
 
   Future close() async {

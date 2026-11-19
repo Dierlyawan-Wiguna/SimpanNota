@@ -23,6 +23,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
 -- Aktifkan Row Level Security (RLS) pada tabel profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow all profile operations for development" ON public.profiles;
 CREATE POLICY "Allow all profile operations for development"
 ON public.profiles
 FOR ALL
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS public.receipts (
 ALTER TABLE public.receipts ENABLE ROW LEVEL SECURITY;
 
 -- Kebijakan Keamanan receipts (RLS Policies)
+DROP POLICY IF EXISTS "Allow all operations for development" ON public.receipts;
 CREATE POLICY "Allow all operations for development"
 ON public.receipts
 FOR ALL
@@ -77,6 +79,7 @@ VALUES ('receipts', 'receipts', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Kebijakan Storage agar foto nota bisa diunggah dan dibaca
+DROP POLICY IF EXISTS "Allow storage access for receipts" ON storage.objects;
 CREATE POLICY "Allow storage access for receipts"
 ON storage.objects
 FOR ALL
