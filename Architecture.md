@@ -325,3 +325,38 @@ lib/
 * `WarrantyStatus` is purely a computed client-side property, never parsed as a static database column.
 
 ---
+
+## Runtime System Logging & Release Candidate Architecture (Pertemuan 10)
+
+### 1. Runtime System Logging (`AppLogger`)
+* **Layer:** `lib/core/services/app_logger.dart`
+* **Purpose:** Menangkap, mencatat, dan menyimpan log diagnostik runtime aplikasi secara terstruktur (termasuk pada mode **Release APK** di mana `debugPrint` tidak tersimpan).
+* **Fitur Utama:**
+  * **Level:** `INFO`, `WARNING`, `ERROR`, `FATAL`.
+  * **Metadata:** ISO-8601 Timestamp, Level, Tag Modul (`APP`, `AUTH`, `SUPABASE`, `SQLITE`, `RECEIPT`, `PROFILE`, `TELEGRAM`, `NOTIFICATION`), Pesan, Error, dan StackTrace.
+  * **Sanitisasi Otomatis:** Menyaring data sensitif (seperti `password`, `token`, `secret`, `apiKey`) menjadi `[REDACTED]`.
+  * **Double-Tier Buffering:**
+    * In-Memory Buffer: `List<LogEntry>` (maks. 500 entri) yang diobservasi secara reaktif oleh `logsNotifier` untuk rendering instan pada UI.
+    * Persistent SQLite Storage: Disimpan ke tabel `system_logs` di SQLite lokal (`lib/core/local/database_helper.dart`) dengan rotasi otomatis maksimal 500 log terbaru.
+* **Global Error Catching (`lib/main.dart`):**
+  * `FlutterError.onError`: Menangkap error visual rendering pada Flutter widget tree.
+  * `PlatformDispatcher.instance.onError`: Menangkap error asynchronous & native platform.
+  * `runZonedGuarded`: Menangkap error tak tertangani pada zone runtime aplikasi.
+
+### 2. Diagnostics & System Log Viewer (`SystemLogScreen`)
+* **Layer:** `lib/features/profile/presentation/screens/system_log_screen.dart`
+* **Akses:** Diakses melalui kartu **Log Sistem & Diagnostik** di halaman Profil (`ProfileScreen`).
+* **Fitur:**
+  * Filter level dinamis (`ALL`, `INFO`, `WARNING`, `ERROR`, `FATAL`).
+  * Pencarian pesan/modul secara instan.
+  * Tombol **Salin Seluruh Log** ke clipboard untuk pelaporan bug.
+  * Tombol **Bersihkan Riwayat Log** dengan konfirmasi dialog.
+  * Modal bottom sheet untuk inspeksi detail error dan stack trace lengkap.
+
+### 3. Android Release Configuration
+* **ProGuard / R8 Rules:** Didefinisikan di `android/app/proguard-rules.pro` untuk mencegah *obfuscation crash* pada Supabase, SQLite, Flutter Local Notifications, dan Local Authentication.
+* **Package Visibility:** Deklarasi `<queries>` di `AndroidManifest.xml` mencakup intent `tg` dan `https` untuk deteksi aplikasi Telegram.
+* **Environment Bundle:** File `.env` dideklarasikan dalam aset `pubspec.yaml` untuk mode rilis.
+
+
+---
