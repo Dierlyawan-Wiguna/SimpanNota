@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -5,32 +7,63 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/constants/supabase_constants.dart';
+import 'core/services/app_logger.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null);
-  await NotificationService().init();
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  if (SupabaseConstants.isConfigured) {
-    try {
-      await Supabase.initialize(
-        url: SupabaseConstants.supabaseUrl,
-        publishableKey: SupabaseConstants.supabaseAnonKey,
+    // Global error catching untuk Flutter widget tree / UI errors
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      AppLogger.fatal(
+        'FLUTTER_ERROR',
+        details.exceptionAsString(),
+        details.exception,
+        details.stack,
       );
-      debugPrint('Supabase berhasil diinisialisasi.');
-    } catch (e) {
-      debugPrint('Gagal menginisialisasi Supabase: $e');
-    }
-  } else {
-    debugPrint(
-      'PERINGATAN: Supabase belum dikonfigurasi. Silakan isi supabaseUrl & supabaseAnonKey di lib/core/constants/supabase_constants.dart.',
-    );
-  }
+    };
 
-  runApp(const ProviderScope(child: App()));
+    // Platform dispatcher error catching untuk asynchronous & platform-level errors
+    PlatformDispatcher.instance.onError = (error, stack) {
+      AppLogger.fatal(
+        'PLATFORM_ERROR',
+        error.toString(),
+        error,
+        stack,
+      );
+      return true;
+    };
+
+    AppLogger.info('APP', 'Memulai inisialisasi aplikasi SimpanNota (Release Candidate)...');
+
+    await initializeDateFormatting('id_ID', null);
+    await NotificationService().init();
+
+    if (SupabaseConstants.isConfigured) {
+      try {
+        await Supabase.initialize(
+          url: SupabaseConstants.supabaseUrl,
+          publishableKey: SupabaseConstants.supabaseAnonKey,
+        );
+        AppLogger.info('SUPABASE', 'Supabase berhasil diinisialisasi.');
+      } catch (e, stack) {
+        AppLogger.error('SUPABASE', 'Gagal menginisialisasi Supabase: $e', e, stack);
+      }
+    } else {
+      AppLogger.warning(
+        'SUPABASE',
+        'Supabase belum dikonfigurasi. Menggunakan penyimpanan offline SQLite.',
+      );
+    }
+
+    runApp(const ProviderScope(child: App()));
+  }, (error, stack) {
+    AppLogger.fatal('ZONE_ERROR', error.toString(), error, stack);
+  });
 }
 
 class App extends ConsumerWidget {
