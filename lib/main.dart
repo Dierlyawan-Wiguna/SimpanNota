@@ -151,6 +151,24 @@ class App extends ConsumerWidget {
       ),
       // Initial route: Splash Screen -> Welcome Screen -> AuthScreen (Login) -> HomeScreen
       home: const SplashScreen(),
+      onGenerateRoute: (settings) {
+        // Tangani callback deep link OAuth Supabase agar tidak memicu error rute internal
+        final name = settings.name ?? '';
+        if (name.contains('login-callback') || name.contains('io.supabase')) {
+          return PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+            transitionDuration: Duration.zero,
+          );
+        }
+        return null;
+      },
+      onUnknownRoute: (settings) {
+        // Mencegah error "Null check operator used on a null value" saat menerima intent URL dari sistem Android
+        return PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+          transitionDuration: Duration.zero,
+        );
+      },
     );
   }
 }
