@@ -156,7 +156,7 @@ class App extends ConsumerWidget {
         final name = settings.name ?? '';
         if (name.contains('login-callback') || name.contains('io.supabase')) {
           return PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+            pageBuilder: (_, _, _) => const SizedBox.shrink(),
             transitionDuration: Duration.zero,
           );
         }
@@ -165,7 +165,7 @@ class App extends ConsumerWidget {
       onUnknownRoute: (settings) {
         // Mencegah error "Null check operator used on a null value" saat menerima intent URL dari sistem Android
         return PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+          pageBuilder: (_, _, _) => const SizedBox.shrink(),
           transitionDuration: Duration.zero,
         );
       },
