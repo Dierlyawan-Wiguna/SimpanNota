@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Query migrasi cepat jika tabel profiles sudah aktif sebelumnya:
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
 
+-- Berikan izin akses tabel ke role anon dan authenticated
+GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+
 -- Aktifkan Row Level Security (RLS) pada tabel profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -48,9 +51,19 @@ CREATE TABLE IF NOT EXISTS public.receipts (
   store_name TEXT NOT NULL,
   purchase_date DATE NOT NULL,
   warranty_months INTEGER NOT NULL CHECK (warranty_months > 0),
+  warranty_days INTEGER DEFAULT 0,
   image_path TEXT,
+  warranty_card_path TEXT,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Kolom tambahan untuk dukungan multi-lampiran dan durasi hari
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS warranty_days INTEGER DEFAULT 0;
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS warranty_card_path TEXT;
+
+-- Berikan izin akses tabel dan sequence ke role anon dan authenticated
+GRANT ALL ON TABLE public.receipts TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- Aktifkan Row Level Security (RLS) pada tabel receipts
 ALTER TABLE public.receipts ENABLE ROW LEVEL SECURITY;
