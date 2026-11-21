@@ -103,21 +103,39 @@ class App extends ConsumerWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
-        cardColor: const Color(0xFF1E293B), // Slate 800
-        dividerColor: const Color(0xFF334155), // Slate 700
+        scaffoldBackgroundColor: AppColors.darkBackground,
+        cardColor: AppColors.darkSurface,
+        dividerColor: AppColors.darkBorder,
+        cardTheme: const CardThemeData(
+          color: AppColors.darkSurface,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: AppColors.darkSurface,
+          surfaceTintColor: Colors.transparent,
+        ),
+        popupMenuTheme: const PopupMenuThemeData(
+          color: AppColors.darkSurface,
+          surfaceTintColor: Colors.transparent,
+        ),
         dialogTheme: const DialogThemeData(
-          backgroundColor: Color(0xFF1E293B),
+          backgroundColor: AppColors.darkSurface,
           surfaceTintColor: Colors.transparent,
         ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryBlue,
           brightness: Brightness.dark,
           primary: const Color(0xFF38BDF8),
-          surface: const Color(0xFF1E293B),
+          surface: AppColors.darkSurface,
+          surfaceContainer: AppColors.darkSurface,
+          surfaceContainerLow: AppColors.darkSurface,
+          surfaceContainerHigh: const Color(0xFF334155),
+          onSurface: Colors.white,
+          outline: AppColors.darkBorder,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B),
+          backgroundColor: AppColors.darkSurface,
           foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: false,

@@ -63,9 +63,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// Task 4: Pilih Foto Profil Asli (Kamera atau Galeri)
   Future<void> _pickAvatarImage() async {
     final picker = ImagePicker();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -80,16 +81,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Text(
+              Text(
                 'Ubah Foto Profil',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: isDark ? Colors.white : AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 16),
@@ -97,21 +98,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlue,
+                    color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt_rounded,
-                    color: AppColors.primaryBlue,
+                    color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                   ),
                 ),
-                title: const Text(
+                title: Text(
                   'Ambil dari Kamera',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.textDark,
+                  ),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Gunakan kamera ponsel untuk swafoto langsung',
-                  style: TextStyle(fontSize: 12),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                  ),
                 ),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
@@ -119,21 +126,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlue,
+                    color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.photo_library_rounded,
-                    color: AppColors.primaryBlue,
+                    color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                   ),
                 ),
-                title: const Text(
+                title: Text(
                   'Pilih dari Galeri',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.textDark,
+                  ),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Pilih foto yang sudah ada di penyimpanan ponsel',
-                  style: TextStyle(fontSize: 12),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                  ),
                 ),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
@@ -142,24 +155,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.delete_outline_rounded,
-                      color: Colors.red,
+                      color: isDark ? const Color(0xFFFCA5A5) : Colors.red,
                     ),
                   ),
-                  title: const Text(
+                  title: Text(
                     'Hapus Foto Profil',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      color: isDark ? const Color(0xFFFCA5A5) : Colors.red,
                     ),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Gunakan inisial nama sebagai avatar bawaan',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                    ),
                   ),
                   onTap: () async {
                     Navigator.pop(ctx);
@@ -511,18 +527,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // Card Informasi Detail Pengguna
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                color: isDark ? AppColors.darkSurface : AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.darkBorder
                       : AppColors.cardBorder,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowColor,
+                    color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                     blurRadius: 10,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -619,18 +635,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // Card Pengaturan Preferensi Tema (Mode Gelap)
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                color: isDark ? AppColors.darkSurface : AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.darkBorder
                       : AppColors.cardBorder,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowColor,
+                    color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                     blurRadius: 10,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -704,18 +720,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // Card Diagnostics / Log Sistem (Pertemuan 10)
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                color: isDark ? AppColors.darkSurface : AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.darkBorder
                       : AppColors.cardBorder,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowColor,
+                    color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                     blurRadius: 10,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),

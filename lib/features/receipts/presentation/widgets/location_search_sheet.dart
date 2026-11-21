@@ -324,6 +324,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -331,9 +332,9 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -344,7 +345,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: isDark ? AppColors.darkBorder : Colors.grey.shade300,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -357,17 +358,17 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlue,
+                    color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.map_rounded,
-                    color: AppColors.primaryBlue,
+                    color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -376,28 +377,28 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
+                          color: isDark ? Colors.white : AppColors.textDark,
                         ),
                       ),
                       Text(
                         'Cari nama toko, mall, atau alamat jalan',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textGrey,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textGrey),
+                  icon: Icon(Icons.close, color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
 
-          const Divider(height: 1),
+          Divider(height: 1, color: isDark ? AppColors.darkBorder : null),
 
           // Input Pencarian
           Padding(
@@ -405,6 +406,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
             child: TextField(
               controller: _searchController,
               autofocus: false,
+              style: TextStyle(color: isDark ? Colors.white : AppColors.textDark, fontSize: 14),
               textInputAction: TextInputAction.search,
               onChanged: _onSearchChanged,
               onSubmitted: (val) {
@@ -414,10 +416,11 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
               },
               decoration: InputDecoration(
                 hintText: 'Ketik nama toko, mall, atau jalan...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.primaryBlue),
+                hintStyle: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.textMuted, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
+                        icon: Icon(Icons.clear, size: 20, color: isDark ? const Color(0xFF94A3B8) : null),
                         onPressed: () {
                           _searchController.clear();
                           _onSearchChanged('');
@@ -425,19 +428,19 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: isDark ? const Color(0xFF0F172A) : AppColors.background,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.cardBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.cardBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                  borderSide: BorderSide(color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue, width: 1.5),
                 ),
               ),
             ),
@@ -478,7 +481,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Material(
-              color: AppColors.lightBlue.withValues(alpha: 0.45),
+              color: isDark ? const Color(0xFF1E3A5F).withValues(alpha: 0.5) : AppColors.lightBlue.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
@@ -493,9 +496,9 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.my_location_rounded,
-                              color: AppColors.primaryBlue,
+                              color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                               size: 18,
                             ),
                       const SizedBox(width: 10),
@@ -507,23 +510,23 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                               _isLocatingGps
                                   ? 'Mendeteksi alamat dari GPS...'
                                   : 'Gunakan Posisi Saya Saat Ini (GPS)',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primaryBlue,
+                                color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                               ),
                             ),
-                            const Text(
+                            Text(
                               'Otomatis mengisi alamat toko tempat Anda berada',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textGrey,
+                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.primaryBlue),
+                      Icon(Icons.arrow_forward_ios, size: 12, color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue),
                     ],
                   ),
                 ),
@@ -612,12 +615,12 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                               leading: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.background,
+                                  color: isDark ? const Color(0xFF0F172A) : AppColors.background,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.location_on_outlined,
-                                  color: AppColors.primaryBlue,
+                                  color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                                   size: 20,
                                 ),
                               ),
@@ -625,19 +628,19 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                                 item.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textDark,
+                                  color: isDark ? Colors.white : AppColors.textDark,
                                 ),
                               ),
                               subtitle: Text(
                                 item.fullAddress,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textGrey,
+                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                                 ),
                               ),
                               onTap: () {

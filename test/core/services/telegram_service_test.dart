@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:simpannota/core/services/telegram_service.dart';
-import 'package:simpannota/features/receipts/domain/receipt.dart';
-import 'package:simpannota/features/receipts/domain/receipt_category.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:simpan_nota/core/services/telegram_service.dart';
+import 'package:simpan_nota/features/receipts/domain/receipt.dart';
+import 'package:simpan_nota/features/receipts/domain/category.dart';
 
 class MockHttpClient extends http.BaseClient {
   final int statusCode;
@@ -30,11 +31,15 @@ class ThrowingHttpClient extends http.BaseClient {
 }
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('id_ID', null);
+  });
+
   final testReceipt = Receipt(
     id: 1,
     productName: 'Extension ESP32 S3',
     storeName: 'Shopee Official',
-    category: ReceiptCategory.elektronik,
+    category: Category.elektronik,
     purchaseDate: DateTime(2026, 1, 1),
     warrantyMonths: 12,
     imagePath: 'receipt_1.jpg',

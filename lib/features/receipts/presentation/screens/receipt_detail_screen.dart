@@ -411,16 +411,16 @@ class _ReceiptDetailScreenState extends ConsumerState<ReceiptDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                      color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                        color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadowColor,
+                          color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                           blurRadius: 10,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),

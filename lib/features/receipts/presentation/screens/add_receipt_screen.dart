@@ -326,26 +326,35 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       });
 
       // Tampilkan Pop-up Peringatan Edukatif
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       await showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color ?? AppColors.surface,
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade100,
+                  color: isDark ? const Color(0xFF451A03) : Colors.amber.shade100,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.location_off_rounded, color: Colors.amber.shade900, size: 22),
+                child: Icon(
+                  Icons.location_off_rounded,
+                  color: isDark ? const Color(0xFFFBBF24) : Colors.amber.shade900,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Alamat Tidak Ada di Peta',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.textDark,
+                  ),
                 ),
               ),
             ],
@@ -358,26 +367,36 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                 manualText.isNotEmpty
                     ? 'Lokasi "$manualText" belum terdaftar di OpenStreetMap.'
                     : 'Alamat toko yang Anda cari belum terdaftar di OpenStreetMap.',
-                style: const TextStyle(fontSize: 13, height: 1.4),
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: isDark ? const Color(0xFFCBD5E1) : AppColors.textDark,
+                ),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDark ? const Color(0xFF0F2B48) : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.blue.shade100),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF1E4976) : Colors.blue.shade100,
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.edit_note_rounded, color: AppColors.primaryBlue, size: 22),
-                    SizedBox(width: 10),
+                    Icon(
+                      Icons.edit_note_rounded,
+                      color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Silakan lengkapi atau ketik alamat toko secara manual pada kolom "Alamat Toko" di bawah.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.primaryBlue,
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

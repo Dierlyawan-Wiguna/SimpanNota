@@ -31,24 +31,22 @@ class ReceiptCard extends StatelessWidget {
       child: Container(
         margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF334155)
-                : AppColors.cardBorder,
+            color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
             width: 1,
           ),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: AppColors.shadowColor,
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : AppColors.shadowColor,
               blurRadius: 14,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: AppColors.shadowColorMedium,
+              color: isDark ? Colors.black.withValues(alpha: 0.15) : AppColors.shadowColorMedium,
               blurRadius: 3,
-              offset: Offset(0, 1),
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -105,17 +103,17 @@ class ReceiptCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.storefront_outlined,
                               size: 13,
-                              color: AppColors.textGrey,
+                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 receipt.storeName,
                                 style: TextStyle(
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color: isDark
                                       ? const Color(0xFF94A3B8)
                                       : AppColors.textGrey,
                                   fontSize: 13,
@@ -169,10 +167,10 @@ class ReceiptCard extends StatelessWidget {
                   ),
 
                   // Chevron indicator
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 14,
-                    color: AppColors.textMuted,
+                    color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                   ),
                 ],
               ),

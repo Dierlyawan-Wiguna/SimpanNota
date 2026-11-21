@@ -71,6 +71,12 @@ class CustomerServiceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
+    final fgColor = isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.primaryBlue.withValues(alpha: 0.25);
+    final textColor = isDark ? Colors.white : AppColors.primaryBlue;
+
     if (isFloating) {
       return Semantics(
         button: true,
@@ -79,12 +85,12 @@ class CustomerServiceButton extends StatelessWidget {
         child: FloatingActionButton.extended(
           heroTag: 'customer_service_fab',
           elevation: 4,
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.primaryBlue,
+          backgroundColor: bgColor,
+          foregroundColor: fgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: AppColors.primaryBlue.withValues(alpha: 0.25),
+              color: borderColor,
               width: 1.2,
             ),
           ),
@@ -102,21 +108,21 @@ class CustomerServiceButton extends StatelessWidget {
                   width: 24,
                   height: 24,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.support_agent_rounded,
                     size: 24,
-                    color: AppColors.primaryBlue,
+                    color: fgColor,
                   ),
                 );
               },
             ),
           ),
-          label: const Text(
+          label: Text(
             'Butuh Bantuan?',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryBlue,
+              color: textColor,
               letterSpacing: -0.1,
             ),
           ),
@@ -138,17 +144,17 @@ class CustomerServiceButton extends StatelessWidget {
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: bgColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                color: borderColor,
                 width: 1.2,
               ),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadowColor,
+                  color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                   blurRadius: 8,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -168,22 +174,22 @@ class CustomerServiceButton extends StatelessWidget {
                         width: 22,
                         height: 22,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
+                        errorBuilder: (context, error, stackTrace) => Icon(
                           Icons.support_agent_rounded,
                           size: 22,
-                          color: AppColors.primaryBlue,
+                          color: fgColor,
                         ),
                       );
                     },
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Butuh Bantuan?',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primaryBlue,
+                    color: textColor,
                     letterSpacing: -0.1,
                   ),
                 ),

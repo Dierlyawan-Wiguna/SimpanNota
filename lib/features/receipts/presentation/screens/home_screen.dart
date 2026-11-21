@@ -127,18 +127,18 @@ class HomeScreen extends ConsumerWidget {
                     textField: true,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                        color: isDark ? AppColors.darkSurface : AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isDark
-                              ? const Color(0xFF334155)
+                              ? AppColors.darkBorder
                               : AppColors.cardBorder,
                         ),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: AppColors.shadowColor,
+                            color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                             blurRadius: 10,
-                            offset: Offset(0, 2),
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -147,12 +147,18 @@ class HomeScreen extends ConsumerWidget {
                           color: isDark ? Colors.white : AppColors.textDark,
                           fontSize: 14,
                         ),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Cari barang atau toko...',
-                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
-                          prefixIcon: Icon(Icons.search_rounded, color: AppColors.textGrey),
+                          hintStyle: TextStyle(
+                            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: isDark ? AppColors.darkTextMuted : AppColors.textGrey,
+                          ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         onChanged: (value) {
                           ref.read(searchQueryProvider.notifier).update(value);
@@ -170,11 +176,13 @@ class HomeScreen extends ConsumerWidget {
                     ref.read(sortOptionProvider.notifier).select(option);
                   },
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                  color: isDark ? AppColors.darkSurface : AppColors.surface,
                   itemBuilder: (context) {
                     final currentSort = ref.watch(sortOptionProvider);
                     return ReceiptSortOption.values.map((option) {
                       final isSelected = currentSort == option;
+                      final activeColor = isDark ? const Color(0xFF38BDF8) : AppColors.accentBlue;
+                      final inactiveColor = isDark ? AppColors.darkTextMuted : AppColors.textGrey;
                       return PopupMenuItem<ReceiptSortOption>(
                         value: option,
                         child: Row(
@@ -182,7 +190,7 @@ class HomeScreen extends ConsumerWidget {
                             Icon(
                               option.icon,
                               size: 18,
-                              color: isSelected ? AppColors.accentBlue : AppColors.textGrey,
+                              color: isSelected ? activeColor : inactiveColor,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -191,12 +199,14 @@ class HomeScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                  color: isSelected ? AppColors.accentBlue : null,
+                                  color: isSelected
+                                      ? activeColor
+                                      : (isDark ? Colors.white : null),
                                 ),
                               ),
                             ),
                             if (isSelected)
-                              const Icon(Icons.check, size: 16, color: AppColors.accentBlue),
+                              Icon(Icons.check, size: 16, color: activeColor),
                           ],
                         ),
                       );
@@ -206,18 +216,18 @@ class HomeScreen extends ConsumerWidget {
                     height: 50,
                     width: 50,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color ?? AppColors.surface,
+                      color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isDark
-                            ? const Color(0xFF334155)
+                            ? AppColors.darkBorder
                             : AppColors.cardBorder,
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadowColor,
+                          color: isDark ? Colors.black.withValues(alpha: 0.25) : AppColors.shadowColor,
                           blurRadius: 10,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),

@@ -29,7 +29,7 @@ void main() {
       expect(find.widgetWithText(TextField, 'Budi Santoso'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, '12345678'), findsOneWidget);
       expect(find.text('Buka @userinfobot'), findsOneWidget);
-      expect(find.text('Belum punya Telegram? Download di sini'), findsOneWidget);
+      expect(find.text('Download Telegram'), findsOneWidget);
       expect(find.text('Simpan'), findsOneWidget);
     });
 

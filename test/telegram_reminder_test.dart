@@ -91,8 +91,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Pengingat Garansi Telegram'), findsOneWidget);
-      expect(find.text('Kirim Pengingat ke Telegram'), findsOneWidget);
+      expect(find.textContaining('Pengingat Garansi Telegram'), findsOneWidget);
+      expect(find.text('Kirim Pengingat Otomatis'), findsOneWidget);
     });
 
     testWidgets('4. Muncul dialog "Telegram Belum Terpasang" saat Telegram belum ada di perangkat', (tester) async {
@@ -121,16 +121,22 @@ void main() {
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
       await tester.pumpAndSettle();
 
-      // Ketuk tombol Kirim Pengingat ke Telegram
-      final button = find.widgetWithText(ElevatedButton, 'Kirim Pengingat ke Telegram');
+      // Ketuk tombol Kirim Pengingat
+      final button = find.widgetWithText(ElevatedButton, 'Kirim Pengingat Otomatis');
       expect(button, findsOneWidget);
       await tester.tap(button);
       await tester.pumpAndSettle();
 
+      // Karena Chat ID belum diatur di profil dummy, ketuk 'Kirim Manual Saja'
+      if (find.text('Kirim Manual Saja').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Kirim Manual Saja'));
+        await tester.pumpAndSettle();
+      }
+
       // Verifikasi AlertDialog Telegram Belum Terpasang muncul
       expect(find.text('Telegram Belum Terpasang'), findsOneWidget);
       expect(
-        find.textContaining('Aplikasi Telegram dibutuhkan untuk mengirim dan menerima pengingat garansi secara otomatis'),
+        find.textContaining('Aplikasi Telegram dibutuhkan untuk mengirim dan menerima pengingat garansi'),
         findsOneWidget,
       );
       expect(find.text('Download Telegram'), findsOneWidget);
@@ -167,9 +173,14 @@ void main() {
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
       await tester.pumpAndSettle();
 
-      final button = find.widgetWithText(ElevatedButton, 'Kirim Pengingat ke Telegram');
+      final button = find.widgetWithText(ElevatedButton, 'Kirim Pengingat Otomatis');
       await tester.tap(button);
       await tester.pumpAndSettle();
+
+      if (find.text('Kirim Manual Saja').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Kirim Manual Saja'));
+        await tester.pumpAndSettle();
+      }
 
       expect(lastLaunchedUrl, startsWith('tg://msg?text='));
     });
