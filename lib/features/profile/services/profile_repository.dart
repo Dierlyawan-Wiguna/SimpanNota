@@ -62,11 +62,12 @@ class ProfileRepository {
     return UserProfile.fromSupabaseUser(user);
   }
 
-  /// Memperbarui nama, nomor telepon, dan Telegram Chat ID pada metadata akun Supabase & tabel profiles
+  /// Memperbarui nama, nomor telepon, dan Telegram Chat ID & Bot Token pada metadata akun Supabase & tabel profiles
   Future<void> updateProfile({
     required String displayName,
     String? phone,
     String? telegramChatId,
+    String? telegramBotToken,
   }) async {
     final sb = _supabase;
     if (sb == null) return;
@@ -89,13 +90,19 @@ class ProfileRepository {
       updatedData.remove('telegram_chat_id');
     }
 
+    if (telegramBotToken != null && telegramBotToken.trim().isNotEmpty) {
+      updatedData['telegram_bot_token'] = telegramBotToken.trim();
+    } else if (telegramBotToken != null && telegramBotToken.trim().isEmpty) {
+      updatedData.remove('telegram_bot_token');
+    }
+
     await sb.auth.updateUser(
       UserAttributes(data: updatedData),
     );
 
     // Sinkronisasi ke tabel database profiles
     try {
-      await sb.from('profiles').upsert({
+      final Map<String, dynamic> upsertData = {
         'id': user.id,
         'name': displayName,
         'phone': phone,
@@ -103,7 +110,8 @@ class ProfileRepository {
             ? telegramChatId.trim()
             : null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      });
+      };
+      await sb.from('profiles').upsert(upsertData);
     } catch (_) {}
   }
 

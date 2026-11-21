@@ -140,10 +140,11 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -162,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: AppColors.lightBlue,
+                      color: isDark ? const Color(0xFF1E293B) : AppColors.lightBlue,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -201,9 +202,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 Text(
                   _isAuthenticating ? 'Menunggu pemindaian biometrik / PIN...' : 'Wajib melakukan verifikasi biometrik (sidik jari/wajah) atau PIN sebelum mengakses Dashboard SimpanNota.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textGrey,
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                     height: 1.4,
                   ),
                 ),
@@ -215,9 +216,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade300),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade300,
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,8 +234,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(
-                              color: Colors.red,
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFFCA5A5) : Colors.red,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -286,10 +289,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         FadePageRoute(page: const WelcomeScreen()),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Ganti Akun / Halaman Login',
                       style: TextStyle(
-                        color: AppColors.textDark,
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textDark,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -310,9 +313,10 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
@@ -376,23 +380,23 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Teks Sambutan
-              const Text(
+              Text(
                 'Welcome to SimpanNota',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 27,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: isDark ? Colors.white : AppColors.textDark,
                   letterSpacing: -0.4,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Solusi cerdas digitalisasi bukti transaksi, arsip struk belanja, dan pemantauan masa aktif garansi barang Anda.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textGrey,
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                   height: 1.45,
                 ),
               ),
@@ -400,25 +404,28 @@ class WelcomeScreen extends StatelessWidget {
 
               // Kartu Fitur Singkat
               _buildFeatureItem(
+                isDark: isDark,
                 icon: Icons.document_scanner_outlined,
                 iconColor: AppColors.primaryBlue,
-                bgColor: AppColors.lightBlue,
+                bgColor: isDark ? const Color(0xFF0F2B48) : AppColors.lightBlue,
                 title: 'Digitalisasi Nota Praktis',
                 description: 'Ambil foto nota fisik agar aman tersimpan dan tidak luntur.',
               ),
               const SizedBox(height: 10),
               _buildFeatureItem(
+                isDark: isDark,
                 icon: Icons.verified_user_outlined,
                 iconColor: AppColors.statusActive,
-                bgColor: AppColors.statusActiveBg,
+                bgColor: isDark ? const Color(0xFF064E3B) : AppColors.statusActiveBg,
                 title: 'Pantau Masa Garansi',
                 description: 'Ketahui nota yang masih aktif, segera berakhir, atau kedaluwarsa.',
               ),
               const SizedBox(height: 10),
               _buildFeatureItem(
+                isDark: isDark,
                 icon: Icons.cloud_done_outlined,
                 iconColor: AppColors.primaryTeal,
-                bgColor: AppColors.lightBlue,
+                bgColor: isDark ? const Color(0xFF0F2B48) : AppColors.lightBlue,
                 title: 'Penyimpanan Akun & Cloud',
                 description: 'Arsip nota tersimpan rapi dan tersinkronisasi aman ke akun Anda.',
               ),
@@ -426,9 +433,10 @@ class WelcomeScreen extends StatelessWidget {
               Semantics(
                 label: 'Fitur Pengingat Garansi Otomatis Gratis via Telegram H-30 & H-7',
                 child: _buildFeatureItem(
+                  isDark: isDark,
                   icon: Icons.send_rounded,
                   iconColor: const Color(0xFF0088CC),
-                  bgColor: const Color(0xFFE8F5FD),
+                  bgColor: isDark ? const Color(0xFF0F2B48) : const Color(0xFFE8F5FD),
                   title: 'Pengingat Garansi via Telegram',
                   description: 'Pengingat Garansi Otomatis Gratis via Telegram (H-30 & H-7) langsung ke akun Anda.',
                 ),
@@ -493,18 +501,22 @@ class WelcomeScreen extends StatelessWidget {
     required Color bgColor,
     required String title,
     required String description,
+    bool isDark = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isDark ? const Color(0xFF1E293B) : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder, width: 1),
-        boxShadow: const [
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+          width: 1,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: AppColors.shadowColor,
+            color: isDark ? Colors.black.withValues(alpha: 0.2) : AppColors.shadowColor,
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -526,18 +538,18 @@ class WelcomeScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: isDark ? Colors.white : AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textGrey,
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                     height: 1.3,
                   ),
                 ),
@@ -848,6 +860,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     bool isSending = false;
     String? dialogError;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     await showDialog(
       context: context,
@@ -855,7 +868,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return StatefulBuilder(
           builder: (_, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.surface,
+              backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -864,7 +877,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.lightBlue,
+                      color: isDark ? const Color(0xFF0F2B48) : AppColors.lightBlue,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -874,13 +887,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Lupa Password',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: isDark ? Colors.white : AppColors.textDark,
                       ),
                     ),
                   ),
@@ -890,11 +903,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Masukkan email akun SimpanNota Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textGrey,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                       height: 1.4,
                     ),
                   ),
@@ -903,24 +916,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: resetEmailController,
                     keyboardType: TextInputType.emailAddress,
                     autofocus: resetEmailController.text.isEmpty,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Alamat Email',
+                      labelStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                      ),
                       prefixIcon: const Icon(
                         Icons.email_outlined,
                         color: AppColors.primaryBlue,
                       ),
                       filled: true,
-                      fillColor: AppColors.background,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.cardBorder,
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.cardBorder,
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -942,7 +962,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         dialogError!,
                         style: TextStyle(
-                          color: Colors.red.shade700,
+                          color: Colors.red.shade400,
                           fontSize: 12,
                         ),
                       ),
@@ -955,10 +975,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: isSending
                       ? null
                       : () => Navigator.pop(dialogContext),
-                  child: const Text(
+                  child: Text(
                     'Batal',
                     style: TextStyle(
-                      color: AppColors.textGrey,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1061,10 +1081,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -1072,7 +1093,7 @@ class _LoginScreenState extends State<LoginScreen> {
           button: true,
           label: 'Kembali ke halaman awal',
           hint: 'Ketuk untuk kembali ke halaman selamat datang',
-          child: const BackButton(color: AppColors.textDark),
+          child: BackButton(color: isDark ? Colors.white : AppColors.textDark),
         ),
       ),
       body: SafeArea(
@@ -1097,13 +1118,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Masuk ke akun SimpanNota Anda untuk mengelola nota dan garansi.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textDark,
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 18),
@@ -1114,20 +1135,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5FD),
+                    color: isDark ? const Color(0xFF0F2B48) : const Color(0xFFE8F5FD),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFBCE1F9)),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF1E4976) : const Color(0xFFBCE1F9),
+                    ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.send_rounded, color: Color(0xFF0088CC), size: 18),
-                      SizedBox(width: 10),
+                      const Icon(Icons.send_rounded, color: Color(0xFF0088CC), size: 18),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Pengingat Garansi Otomatis Gratis via Telegram (H-30 & H-7)',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF006699),
+                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF006699),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1143,9 +1166,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   margin: const EdgeInsets.only(bottom: 20),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade300),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade300,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1158,8 +1183,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.red,
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFFFCA5A5) : Colors.red,
                             fontSize: 13,
                           ),
                         ),
@@ -1175,17 +1200,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textDark,
+                    fontSize: 14,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Email',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                    ),
                     prefixIcon: const Icon(
                       Icons.email_outlined,
                       color: AppColors.primaryBlue,
                     ),
                     filled: true,
-                    fillColor: AppColors.lightBlue,
+                    fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                        width: 1.5,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -1203,8 +1250,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textDark,
+                    fontSize: 14,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Password',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                    ),
                     prefixIcon: const Icon(
                       Icons.lock_outline,
                       color: AppColors.primaryBlue,
@@ -1219,7 +1273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _isPasswordVisible
                               ? Icons.visibility
                               : Icons.visibility_off,
-                          color: Colors.grey,
+                          color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
                         ),
                         onPressed: () {
                           setState(
@@ -1229,10 +1283,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     filled: true,
-                    fillColor: AppColors.lightBlue,
+                    fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                        width: 1.5,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -1260,10 +1329,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text(
+                    child: Text(
                       'Lupa Password?',
                       style: TextStyle(
-                        color: AppColors.primaryBlue,
+                        color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -1310,21 +1379,29 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
 
               // Divider "atau masuk dengan"
-              const Row(
+              Row(
                 children: [
-                  Expanded(child: Divider(color: AppColors.cardBorder)),
+                  Expanded(
+                    child: Divider(
+                      color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                    ),
+                  ),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Text(
                       'atau masuk dengan',
                       style: TextStyle(
-                        color: AppColors.textGrey,
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.cardBorder)),
+                  Expanded(
+                    child: Divider(
+                      color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -1340,9 +1417,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: OutlinedButton(
                     onPressed: _isLoading ? null : _handleGoogleLogin,
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      side: const BorderSide(
-                        color: AppColors.cardBorder,
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
                         width: 1.2,
                       ),
                       shape: RoundedRectangleBorder(
@@ -1364,12 +1441,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Lanjutkan dengan Google',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
+                            color: isDark ? Colors.white : AppColors.textDark,
                           ),
                         ),
                       ],
@@ -1770,6 +1847,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final keyboardBottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PopScope(
       canPop: false,
@@ -1782,7 +1860,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -1791,7 +1869,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             label: 'Kembali ke halaman login',
             hint: 'Ketuk untuk kembali ke halaman masuk akun',
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+              icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : AppColors.textDark),
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
@@ -1815,344 +1893,464 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 const Text(
                   'Buat Akun Baru',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryBlue,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Daftar akun untuk mencatat dan mengamankan nota belanja serta garansi Anda di cloud.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 36),
-
-              if (_errorMessage != null)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryBlue,
                   ),
                 ),
-
-              Semantics(
-                textField: true,
-                label: 'Kolom input nama lengkap',
-                hint: 'Ketik nama lengkap Anda',
-                child: TextField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: InputDecoration(
-                    hintText: 'Nama Lengkap',
-                    prefixIcon: const Icon(
-                      Icons.person_outline,
-                      color: AppColors.primaryBlue,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.lightBlue,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
+                const SizedBox(height: 12),
+                Text(
+                  'Daftar akun untuk mencatat dan mengamankan nota belanja serta garansi Anda di cloud.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textDark,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 36),
 
-              Semantics(
-                textField: true,
-                label: 'Kolom input nomor telepon atau WhatsApp',
-                hint: 'Ketik nomor telepon WhatsApp Anda',
-                child: TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    hintText: '81234567890 (WhatsApp)',
-                    prefixIcon: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            color: AppColors.primaryBlue,
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            '+62',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryBlue,
-                              fontSize: 15,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          SizedBox(
-                            height: 20,
-                            child: VerticalDivider(
-                              color: AppColors.cardBorder,
-                              width: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.lightBlue,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Semantics(
-                textField: true,
-                label: 'Kolom input email',
-                hint: 'Ketik alamat email Anda',
-                child: TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: const Icon(
-                      Icons.email_outlined,
-                      color: AppColors.primaryBlue,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.lightBlue,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Semantics(
-                textField: true,
-                label: 'Kolom input kata sandi baru',
-                hint: 'Ketik kata sandi minimal enam karakter',
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: 'Password (min. 6 karakter)',
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: AppColors.primaryBlue,
-                    ),
-                    suffixIcon: Semantics(
-                      button: true,
-                      label: _isPasswordVisible
-                          ? 'Sembunyikan kata sandi'
-                          : 'Tampilkan kata sandi',
-                      child: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey,
-                        ),
-                        onPressed: () {
-                          setState(
-                            () => _isPasswordVisible = !_isPasswordVisible,
-                          );
-                        },
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.lightBlue,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Semantics(
-                textField: true,
-                label: 'Kolom input konfirmasi kata sandi',
-                hint: 'Ketik ulang kata sandi yang sama persis',
-                child: TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: 'Konfirmasi Password',
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: AppColors.primaryBlue,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.lightBlue,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              Semantics(
-                button: true,
-                label: 'Tombol daftar akun',
-                hint: 'Ketuk untuk menyelesaikan registrasi akun baru',
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegister,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
-                    shadowColor: AppColors.primaryBlue.withValues(alpha: 0.5),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Daftar (Sign Up)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Divider "atau daftar dengan"
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: AppColors.cardBorder)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14),
-                    child: Text(
-                      'atau daftar dengan',
-                      style: TextStyle(
-                        color: AppColors.textGrey,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: AppColors.cardBorder)),
-                ],
-              ),
-              const SizedBox(height: 18),
-
-              // Tombol Google Register
-              Semantics(
-                button: true,
-                label: 'Tombol daftar dengan Google',
-                hint: 'Ketuk untuk mendaftar akun menggunakan akun Google Anda',
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _handleGoogleLogin,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      side: const BorderSide(
-                        color: AppColors.cardBorder,
-                        width: 1.2,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                if (_errorMessage != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade300,
                       ),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          'assets/images/google_logo.png',
-                          width: 22,
-                          height: 22,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.network(
-                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
-                                width: 22,
-                                height: 22,
-                              ),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 20,
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Daftar dengan Google',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFFCA5A5) : Colors.red,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+
+                Semantics(
+                  textField: true,
+                  label: 'Kolom input nama lengkap',
+                  hint: 'Ketik nama lengkap Anda',
+                  child: TextField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Nama Lengkap',
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.person_outline,
+                        color: AppColors.primaryBlue,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                Semantics(
+                  textField: true,
+                  label: 'Kolom input nomor telepon atau WhatsApp',
+                  hint: 'Ketik nomor telepon WhatsApp Anda',
+                  child: TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '81234567890 (WhatsApp)',
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      ),
+                      prefixIcon: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.phone_outlined,
+                              color: AppColors.primaryBlue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              '+62',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryBlue,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 20,
+                              child: VerticalDivider(
+                                color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                                width: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Semantics(
+                  textField: true,
+                  label: 'Kolom input email',
+                  hint: 'Ketik alamat email Anda',
+                  child: TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: AppColors.primaryBlue,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Semantics(
+                  textField: true,
+                  label: 'Kolom input kata sandi baru',
+                  hint: 'Ketik kata sandi minimal enam karakter',
+                  child: TextField(
+                    controller: _passwordController,
+                    obscureText: !_isPasswordVisible,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Password (min. 6 karakter)',
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.primaryBlue,
+                      ),
+                      suffixIcon: Semantics(
+                        button: true,
+                        label: _isPasswordVisible
+                            ? 'Sembunyikan kata sandi'
+                            : 'Tampilkan kata sandi',
+                        child: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(
+                              () => _isPasswordVisible = !_isPasswordVisible,
+                            );
+                          },
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Semantics(
+                  textField: true,
+                  label: 'Kolom input konfirmasi kata sandi',
+                  hint: 'Ketik ulang kata sandi yang sama persis',
+                  child: TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: !_isPasswordVisible,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textDark,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Konfirmasi Password',
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.primaryBlue,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : AppColors.lightBlue,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                Semantics(
+                  button: true,
+                  label: 'Tombol daftar akun',
+                  hint: 'Ketuk untuk menyelesaikan registrasi akun baru',
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      shadowColor: AppColors.primaryBlue.withValues(alpha: 0.5),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Daftar (Sign Up)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Divider "atau daftar dengan"
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Text(
+                        'atau daftar dengan',
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // Tombol Google Register
+                Semantics(
+                  button: true,
+                  label: 'Tombol daftar dengan Google',
+                  hint: 'Ketuk untuk mendaftar akun menggunakan akun Google Anda',
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : _handleGoogleLogin,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                          width: 1.2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/google_logo.png',
+                            width: 22,
+                            height: 22,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/480px-Google_%22G%22_logo.svg.png',
+                                  width: 22,
+                                  height: 22,
+                                ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Daftar dengan Google',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 24),
 
               Center(

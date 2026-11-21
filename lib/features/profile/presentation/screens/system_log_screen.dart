@@ -77,6 +77,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
   }
 
   void _showLogDetail(LogEntry log) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -100,7 +101,7 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
+                    color: isDark ? const Color(0xFF475569) : Colors.grey.shade400,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -128,7 +129,10 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
               const SizedBox(height: 8),
               Text(
                 'Waktu: ${DateFormat('yyyy-MM-dd HH:mm:ss.SSS').format(log.timestamp)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                ),
               ),
               const Divider(height: 24),
               const Text(
@@ -150,13 +154,19 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade200,
+                    ),
                   ),
                   child: SelectableText(
                     log.error!,
-                    style: TextStyle(fontSize: 12, color: Colors.red.shade900, fontFamily: 'monospace'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFFFCA5A5) : Colors.red.shade900,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
               ],
@@ -170,13 +180,19 @@ class _SystemLogScreenState extends State<SystemLogScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: isDark ? const Color(0xFF0F172A) : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : Colors.grey.shade300,
+                    ),
                   ),
                   child: SelectableText(
                     log.stackTrace!,
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: isDark ? const Color(0xFF94A3B8) : Colors.black87,
+                    ),
                   ),
                 ),
               ],

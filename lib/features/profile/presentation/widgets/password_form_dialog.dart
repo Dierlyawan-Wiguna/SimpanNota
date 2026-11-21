@@ -73,26 +73,36 @@ class _PasswordFormDialogState extends State<PasswordFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? const Color(0xFFE2E8F0) : AppColors.textDark;
+    final fieldFillColor = isDark ? const Color(0xFF0F172A) : AppColors.background;
+    final fieldBorderColor = isDark ? const Color(0xFF334155) : AppColors.cardBorder;
+    final textStyle = TextStyle(color: isDark ? Colors.white : AppColors.textDark, fontSize: 14);
+
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue,
+              color: isDark ? const Color(0xFF334155) : AppColors.lightBlue,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue, size: 22),
+            child: Icon(
+              Icons.lock_reset_rounded,
+              color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Ubah Kata Sandi',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+              color: isDark ? Colors.white : AppColors.textDark,
             ),
           ),
         ],
@@ -102,73 +112,93 @@ class _PasswordFormDialogState extends State<PasswordFormDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Masukkan kata sandi baru untuk akun Anda (minimal 6 karakter).',
-              style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Kata Sandi Baru',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: labelColor),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _passController,
               obscureText: _isObscure,
               enabled: !_isSaving,
+              style: textStyle,
               decoration: InputDecoration(
                 hintText: 'Minimal 6 karakter',
-                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
+                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.lock_outline,
+                  color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _isObscure ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.grey,
+                    color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
                   ),
                   onPressed: () => setState(() => _isObscure = !_isObscure),
                 ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: fieldFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: fieldBorderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: fieldBorderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                  borderSide: BorderSide(
+                    color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                    width: 1.5,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Konfirmasi Kata Sandi Baru',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: labelColor),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _confirmPassController,
               obscureText: _isObscure,
               enabled: !_isSaving,
+              style: textStyle,
               decoration: InputDecoration(
                 hintText: 'Ulangi kata sandi baru',
-                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryBlue),
+                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.lock_outline,
+                  color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: fieldFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: fieldBorderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                  borderSide: BorderSide(color: fieldBorderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                  borderSide: BorderSide(
+                    color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                    width: 1.5,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
@@ -178,7 +208,7 @@ class _PasswordFormDialogState extends State<PasswordFormDialog> {
                 padding: const EdgeInsets.only(top: 10),
                 child: Text(
                   _dialogError!,
-                  style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                  style: TextStyle(color: Colors.red.shade400, fontSize: 12),
                 ),
               ),
           ],
@@ -188,7 +218,13 @@ class _PasswordFormDialogState extends State<PasswordFormDialog> {
       actions: [
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.pop(context),
-          child: const Text('Batal', style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.w600)),
+          child: Text(
+            'Batal',
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _handleSave,

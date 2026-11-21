@@ -71,6 +71,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final receiptListState = ref.watch(filteredReceiptListProvider);
 
     return Scaffold(
@@ -89,7 +90,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.primaryBlue,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -129,7 +130,7 @@ class HomeScreen extends ConsumerWidget {
                         color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
+                          color: isDark
                               ? const Color(0xFF334155)
                               : AppColors.cardBorder,
                         ),
@@ -142,6 +143,10 @@ class HomeScreen extends ConsumerWidget {
                         ],
                       ),
                       child: TextField(
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppColors.textDark,
+                          fontSize: 14,
+                        ),
                         decoration: const InputDecoration(
                           hintText: 'Cari barang atau toko...',
                           hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
@@ -204,7 +209,7 @@ class HomeScreen extends ConsumerWidget {
                       color: Theme.of(context).cardTheme.color ?? AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
+                        color: isDark
                             ? const Color(0xFF334155)
                             : AppColors.cardBorder,
                       ),
@@ -219,9 +224,9 @@ class HomeScreen extends ConsumerWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.tune_rounded, // Ikon Filter / Slider sesuai Foto 1
-                          color: AppColors.primaryBlue,
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                           size: 22,
                         ),
                         // Indikator titik jika filter non-default sedang aktif
@@ -232,8 +237,8 @@ class HomeScreen extends ConsumerWidget {
                             child: Container(
                               width: 7,
                               height: 7,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryBlue,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -308,30 +313,30 @@ class HomeScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: AppColors.lightBlue,
+                            color: isDark ? const Color(0xFF1E293B) : AppColors.lightBlue,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.receipt_long_outlined,
                             size: 54,
-                            color: AppColors.primaryBlue,
+                            color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Belum Ada Nota Tersimpan',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
+                            color: isDark ? Colors.white : AppColors.textDark,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                        Text(
                           'Ketuk tombol (+) di bawah untuk mulai menambah nota.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textGrey,
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textGrey,
                           ),
                         ),
                       ],

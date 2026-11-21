@@ -36,6 +36,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() {
       _profile = ref.read(profileRepositoryProvider).getCurrentProfile();
     });
+    ref.read(profileRepositoryProvider).fetchProfile().then((fresh) {
+      if (mounted) {
+        setState(() {
+          _profile = fresh;
+        });
+      }
+    });
   }
 
   String _getDisplayName() => _profile.displayName;
@@ -221,6 +228,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       initialName: _getDisplayName(),
       initialPhone: _getPhoneNumber(),
       initialTelegramChatId: _profile.telegramChatId,
+      initialTelegramBotToken: _profile.telegramBotToken,
       onSubmit: (data) async {
         await ref
             .read(profileRepositoryProvider)
@@ -228,6 +236,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               displayName: data.name,
               phone: data.phone,
               telegramChatId: data.telegramChatId,
+              telegramBotToken: data.telegramBotToken,
             );
         _loadUserData();
         if (mounted) {
@@ -238,18 +247,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _handleSignOut() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Keluar dari Akun?'),
-        content: const Text(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
+        title: Text(
+          'Keluar dari Akun?',
+          style: TextStyle(
+            color: isDark ? Colors.white : AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
           'Apakah Anda yakin ingin keluar dari akun SimpanNota?',
+          style: TextStyle(
+            color: isDark ? const Color(0xFFCBD5E1) : AppColors.textGrey,
+          ),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'Batal',
+              style: TextStyle(
+                color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -561,6 +586,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         : AppColors.cardBorder,
                   ),
                   _buildProfileTile(
+                    icon: Icons.smart_toy_rounded,
+                    label: 'Pengingat Otomatis Bot',
+                    value: (_profile.telegramBotToken != null &&
+                            _profile.telegramBotToken!.isNotEmpty) ||
+                            SupabaseConstants.isTelegramBotConfigured
+                        ? 'Aktif (Langsung Otomatis)'
+                        : 'Siap Konfigurasi (Manual)',
+                    showEditHint: true,
+                    onTap: _editProfileDialog,
+                  ),
+                  Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : AppColors.cardBorder,
+                  ),
+                  _buildProfileTile(
                     icon: Icons.calendar_today_rounded,
                     label: 'Tanggal Mendaftar',
                     value: regDate,
@@ -734,15 +778,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 margin: const EdgeInsets.only(bottom: 20),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: isDark ? const Color(0xFF451A03) : Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.amber.shade200),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF78350F) : Colors.amber.shade200,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.notifications_active_outlined,
-                      color: Colors.amber.shade800,
+                      color: isDark ? const Color(0xFFFBBF24) : Colors.amber.shade800,
                       size: 22,
                     ),
                     const SizedBox(width: 12),
@@ -755,7 +801,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade900,
+                              color: isDark ? const Color(0xFFFDE68A) : Colors.amber.shade900,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -763,7 +809,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             'Lengkapi nomor telepon atau Telegram Chat ID agar bisa menerima notifikasi pengingat garansi.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.amber.shade900,
+                              color: isDark ? const Color(0xFFFDE68A) : Colors.amber.shade900,
                             ),
                           ),
                         ],
@@ -771,9 +817,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     TextButton(
                       onPressed: _editProfileDialog,
-                      child: const Text(
+                      child: Text(
                         'Isi Sekarang',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                        ),
                       ),
                     ),
                   ],
@@ -793,9 +842,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryNavy,
-                    side: const BorderSide(
-                      color: AppColors.cardBorder,
+                    foregroundColor: isDark ? Colors.white : AppColors.primaryNavy,
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
                       width: 1.3,
                     ),
                     shape: RoundedRectangleBorder(
@@ -819,12 +868,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
-                  foregroundColor: Colors.red.shade700,
+                  backgroundColor: isDark ? const Color(0xFF450A0A) : Colors.red.shade50,
+                  foregroundColor: isDark ? const Color(0xFFFCA5A5) : Colors.red.shade700,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.red.shade200),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF7F1D1D) : Colors.red.shade200,
+                    ),
                   ),
                 ),
               ),

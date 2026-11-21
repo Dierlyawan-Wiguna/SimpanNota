@@ -10,6 +10,7 @@ class CategoryChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCategory = ref.watch(selectedCategoryProvider);
     
     // 'Semua' (null) is represented by the first item
@@ -39,16 +40,20 @@ class CategoryChips extends ConsumerWidget {
                 label: Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textBody,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? const Color(0xFFCBD5E1) : AppColors.textBody),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 13,
                   ),
                 ),
                 selected: isSelected,
-                selectedColor: AppColors.primaryBlue,
-                backgroundColor: AppColors.surface,
+                selectedColor: isDark ? const Color(0xFF0284C7) : AppColors.primaryBlue,
+                backgroundColor: isDark ? const Color(0xFF1E293B) : AppColors.surface,
                 side: BorderSide(
-                  color: isSelected ? AppColors.primaryBlue : AppColors.cardBorder,
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF0284C7) : AppColors.primaryBlue)
+                      : (isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                   width: 1,
                 ),
                 shape: RoundedRectangleBorder(

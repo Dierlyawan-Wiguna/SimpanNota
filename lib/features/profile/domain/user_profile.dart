@@ -9,6 +9,7 @@ class UserProfile {
   final String email;
   final String phone;
   final String? telegramChatId;
+  final String? telegramBotToken;
   final String? avatarUrl;
   final DateTime registrationDate;
   final String authProvider;
@@ -19,6 +20,7 @@ class UserProfile {
     required this.email,
     required this.phone,
     this.telegramChatId,
+    this.telegramBotToken,
     this.avatarUrl,
     required this.registrationDate,
     required this.authProvider,
@@ -74,6 +76,7 @@ class UserProfile {
       email: json['email']?.toString() ?? '-',
       phone: json['phone']?.toString() ?? '-',
       telegramChatId: json['telegram_chat_id']?.toString() ?? json['telegramChatId']?.toString(),
+      telegramBotToken: json['telegram_bot_token']?.toString() ?? json['telegramBotToken']?.toString(),
       avatarUrl: json['avatar_url']?.toString() ?? json['avatarUrl']?.toString(),
       registrationDate: parsedDate,
       authProvider: json['auth_provider']?.toString() ?? json['authProvider']?.toString() ?? 'Email & Kata Sandi',
@@ -89,6 +92,7 @@ class UserProfile {
       'email': email,
       'phone': phone,
       'telegram_chat_id': telegramChatId,
+      'telegram_bot_token': telegramBotToken,
       'avatar_url': avatarUrl,
       'registration_date': registrationDate.toIso8601String(),
       'auth_provider': authProvider,
@@ -121,6 +125,11 @@ class UserProfile {
         ? rawTgId.toString().trim()
         : null;
 
+    final rawTgToken = metadata?['telegram_bot_token'] ?? metadata?['telegramBotToken'];
+    final String? tgToken = (rawTgToken != null && rawTgToken.toString().trim().isNotEmpty)
+        ? rawTgToken.toString().trim()
+        : null;
+
     final avatar = metadata?['avatar_url'] ?? metadata?['picture'];
     final avatarUrl = (avatar != null && avatar.toString().trim().isNotEmpty)
         ? avatar.toString().trim()
@@ -143,6 +152,7 @@ class UserProfile {
       email: user.email ?? '-',
       phone: phone,
       telegramChatId: tgId,
+      telegramBotToken: tgToken,
       avatarUrl: avatarUrl,
       registrationDate: regDate,
       authProvider: provider,
@@ -155,6 +165,7 @@ class UserProfile {
     String? email,
     String? phone,
     String? telegramChatId,
+    String? telegramBotToken,
     String? avatarUrl,
     DateTime? registrationDate,
     String? authProvider,
@@ -165,6 +176,7 @@ class UserProfile {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       telegramChatId: telegramChatId ?? this.telegramChatId,
+      telegramBotToken: telegramBotToken ?? this.telegramBotToken,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       registrationDate: registrationDate ?? this.registrationDate,
       authProvider: authProvider ?? this.authProvider,

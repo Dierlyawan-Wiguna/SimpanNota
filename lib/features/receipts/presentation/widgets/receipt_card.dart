@@ -18,8 +18,11 @@ class ReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _getStatusColor(receipt.status);
-    final statusBg = _getStatusBgColor(receipt.status);
+    final statusBg = isDark
+        ? statusColor.withValues(alpha: 0.16)
+        : _getStatusBgColor(receipt.status);
 
     return Semantics(
       label: 'Nota untuk ${receipt.productName}, toko ${receipt.storeName}, masa garansi ${receipt.warrantyDurationLabel}, status ${receipt.status.label}',

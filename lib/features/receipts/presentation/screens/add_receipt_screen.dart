@@ -451,6 +451,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
   Widget _buildWarrantyTypeChip({required int index, required String label}) {
     final isSelected = _warrantyTypeIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -463,10 +464,14 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryBlue : Colors.grey.shade100,
+            color: isSelected
+                ? (isDark ? const Color(0xFF0284C7) : AppColors.primaryBlue)
+                : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? AppColors.primaryBlue : Colors.grey.shade300,
+              color: isSelected
+                  ? (isDark ? const Color(0xFF0284C7) : AppColors.primaryBlue)
+                  : (isDark ? const Color(0xFF334155) : Colors.grey.shade300),
               width: isSelected ? 1.5 : 1.0,
             ),
           ),
@@ -476,7 +481,9 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.black87,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? const Color(0xFFCBD5E1) : Colors.black87),
             ),
           ),
         ),
@@ -571,6 +578,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(addReceiptNotifierProvider);
 
     // Keyboard-Safe UI: Ambil bottom viewInsets agar input box tidak tertutup keyboard
@@ -658,12 +666,12 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                           Container(
                             height: 180,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: state.validationError != null && state.validationError!.contains('Foto') 
                                     ? Colors.red 
-                                    : Colors.grey.shade300,
+                                    : (isDark ? const Color(0xFF334155) : Colors.grey.shade300),
                                 width: 1.5,
                               ),
                             ),
@@ -743,9 +751,12 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                                         children: [
                                           Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.primaryBlue.withValues(alpha: 0.7)),
                                           const SizedBox(height: 8),
-                                          const Text(
+                                          Text(
                                             'Lampirkan Foto Nota',
-                                            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textDark),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark ? Colors.white : AppColors.textDark,
+                                            ),
                                           ),
                                           const SizedBox(height: 12),
                                           Row(
@@ -800,7 +811,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                               color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.grey.shade300,
+                                color: isDark ? const Color(0xFF334155) : Colors.grey.shade300,
                                 width: 1.0,
                               ),
                             ),
@@ -1115,7 +1126,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade700,
+                                      color: isDark ? const Color(0xFFCBD5E1) : Colors.grey.shade700,
                                     ),
                                   ),
                                 ],
@@ -1231,21 +1242,31 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                                   margin: const EdgeInsets.only(top: 10),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
+                                    color: isDark
+                                        ? const Color(0xFF0C4A6E).withValues(alpha: 0.35)
+                                        : Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.blue.shade200),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? const Color(0xFF0284C7).withValues(alpha: 0.5)
+                                          : Colors.blue.shade200,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.verified_rounded, color: AppColors.primaryBlue, size: 20),
+                                      Icon(
+                                        Icons.verified_rounded,
+                                        color: isDark ? const Color(0xFF38BDF8) : AppColors.primaryBlue,
+                                        size: 20,
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Garansi: ${_getWarrantyDurationSummary()} (Berakhir ${DateFormat('dd MMMM yyyy', 'id_ID').format(_calculateExpirationPreview()!)})',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: AppColors.primaryBlue,
+                                            color: isDark ? const Color(0xFFE0F2FE) : AppColors.primaryBlue,
                                           ),
                                         ),
                                       ),
