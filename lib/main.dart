@@ -106,7 +106,7 @@ class App extends ConsumerWidget {
         scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
         cardColor: const Color(0xFF1E293B), // Slate 800
         dividerColor: const Color(0xFF334155), // Slate 700
-        dialogTheme: const DialogTheme(
+        dialogTheme: const DialogThemeData(
           backgroundColor: Color(0xFF1E293B),
           surfaceTintColor: Colors.transparent,
         ),
