@@ -146,5 +146,138 @@ void main() {
       expect(result.status, TelegramSendStatus.networkError);
       expect(result.isSuccess, isFalse);
     });
+
+    test('mengirim ke ID grup/supergroup negatif berhasil', () async {
+      TelegramService.client = MockHttpClient(
+        statusCode: 200,
+        body: '{"ok": true, "result": {"message_id": 105}}',
+      );
+
+      final result = await TelegramService.sendAutomatedMessage(
+        chatId: '-1001234567890',
+        message: 'Notifikasi Grup SimpanNota',
+        botToken: '123456:VALID_TOKEN',
+      );
+
+      expect(result.status, TelegramSendStatus.success);
+      expect(result.isSuccess, isTrue);
+    });
+
+    test('mengembalikan error jika API Telegram merespons kode status lainnya (500)', () async {
+      TelegramService.client = MockHttpClient(
+        statusCode: 500,
+        body: '{"ok": false, "error_code": 500, "description": "Internal Server Error"}',
+      );
+
+      final result = await TelegramService.sendAutomatedMessage(
+        chatId: '1227447571',
+        message: 'Tes 500',
+        botToken: '123456:VALID_TOKEN',
+      );
+
+      expect(result.status, TelegramSendStatus.error);
+      expect(result.statusCode, 500);
+      expect(result.isSuccess, isFalse);
+    });
+  });
+
+  group('TelegramService - testBotConnection & maskSensitiveData (Issue 3)', () {
+    test('maskSensitiveData menyamarkan string sensitif untuk keamanan log', () {
+      expect(TelegramService.maskSensitiveData('123456789'), '12***89');
+      expect(TelegramService.maskSensitiveData('123'), '****');
+      expect(TelegramService.maskSensitiveData('1234'), '****');
+      expect(TelegramService.maskSensitiveData('abcdefghij'), 'ab***ij');
+    });
+
+    test('testBotConnection mengirim pesan verifikasi sukses saat respons 200', () async {
+      TelegramService.client = MockHttpClient(
+        statusCode: 200,
+        body: '{"ok": true, "result": {"message_id": 200}}',
+      );
+
+      final result = await TelegramService.testBotConnection(
+        chatId: '1227447571',
+        botToken: '123456:VALID_TOKEN',
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.status, TelegramSendStatus.success);
+      expect(result.statusCode, 200);
+    });
+
+    test('testBotConnection mengembalikan chatNotFound saat pengguna belum memulai bot (400)', () async {
+      TelegramService.client = MockHttpClient(
+        statusCode: 400,
+        body: '{"ok": false, "error_code": 400, "description": "Bad Request: chat not found"}',
+      );
+
+      final result = await TelegramService.testBotConnection(
+        chatId: '1227447571',
+        botToken: '123456:VALID_TOKEN',
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.status, TelegramSendStatus.chatNotFound);
+      expect(result.statusCode, 400);
+    });
+
+    test('testBotConnection mengembalikan userNotStarted saat bot diblokir pengguna (403)', () async {
+      TelegramService.client = MockHttpClient(
+        statusCode: 403,
+        body: '{"ok": false, "error_code": 403, "description": "Forbidden: bot was blocked by the user"}',
+      );
+
+      final result = await TelegramService.testBotConnection(
+        chatId: '1227447571',
+        botToken: '123456:VALID_TOKEN',
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.status, TelegramSendStatus.userNotStarted);
+      expect(result.statusCode, 403);
+    });
+  });
+
+  group('TelegramService - formatWarrantyReminderMessage Status Variations', () {
+    test('menghasilkan status KEDALUWARSA jika tanggal kadaluarsa di masa lalu', () {
+      final expiredReceipt = Receipt(
+        id: 2,
+        productName: 'Kabel Charger Lama',
+        storeName: 'Toko Lama',
+        category: Category.elektronik,
+        purchaseDate: DateTime(2020, 1, 1),
+        warrantyMonths: 1,
+        imagePath: 'kabel.jpg',
+      );
+
+      final msg = TelegramService.formatWarrantyReminderMessage(
+        receipt: expiredReceipt,
+        userName: 'Budi',
+      );
+
+      expect(msg, contains('KEDALUWARSA'));
+      expect(msg, contains('❌'));
+    });
+
+    test('menghasilkan status SEGERA BERAKHIR jika sisa hari <= 30', () {
+      final now = DateTime.now();
+      final soonReceipt = Receipt(
+        id: 3,
+        productName: 'Keyboard Mechanical',
+        storeName: 'Gaming Store',
+        category: Category.elektronik,
+        purchaseDate: now.subtract(const Duration(days: 350)),
+        warrantyMonths: 12,
+        imagePath: 'keyboard.jpg',
+      );
+
+      final msg = TelegramService.formatWarrantyReminderMessage(
+        receipt: soonReceipt,
+        userName: 'Andi',
+      );
+
+      expect(msg, contains('SEGERA BERAKHIR'));
+      expect(msg, contains('⚠️'));
+    });
   });
 }

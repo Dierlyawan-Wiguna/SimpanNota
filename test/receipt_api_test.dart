@@ -123,5 +123,71 @@ void main() {
       // seharusnya mengubah FormatException menjadi Server Exception 
       expect(() => repo.getReceipts(), throwsException);
     });
+
+    test('7. toSupabaseMap mengabaikan warranty_card_path jika includeWarrantyCard bernilai false', () {
+      final receipt = Receipt(
+        id: 5,
+        productName: 'Monitor Dell',
+        category: Category.elektronik,
+        storeName: 'Dell Store',
+        purchaseDate: DateTime(2026, 2, 1),
+        warrantyMonths: 36,
+        warrantyDays: 10,
+        imagePath: '/img/dell.png',
+        warrantyCardPath: '/img/card.png',
+      );
+
+      final map = receipt.toSupabaseMap(includeWarrantyCard: false);
+      expect(map.containsKey('warranty_card_path'), isFalse);
+    });
+
+    test('8. toSupabaseMap menyertakan warranty_card_path jika includeWarrantyCard bernilai true', () {
+      final receipt = Receipt(
+        id: 5,
+        productName: 'Monitor Dell',
+        category: Category.elektronik,
+        storeName: 'Dell Store',
+        purchaseDate: DateTime(2026, 2, 1),
+        warrantyMonths: 36,
+        warrantyDays: 10,
+        imagePath: '/img/dell.png',
+        warrantyCardPath: '/img/card.png',
+      );
+
+      final map = receipt.toSupabaseMap(includeWarrantyCard: true);
+      expect(map['warranty_card_path'], '/img/card.png');
+    });
+
+    test('9. toSupabaseMap mengatur warranty_months minimal 1 saat input bernilai 0', () {
+      final receipt = Receipt(
+        id: 6,
+        productName: 'Kabel Audio',
+        category: Category.lainnya,
+        storeName: 'Toko Kabel',
+        purchaseDate: DateTime(2026, 3, 1),
+        warrantyMonths: 0,
+        warrantyDays: 7,
+        imagePath: '/img/cable.png',
+      );
+
+      final map = receipt.toSupabaseMap();
+      expect(map['warranty_months'], 1);
+    });
+
+    test('10. toSupabaseMap tanpa includeDays tidak menyertakan key warranty_days', () {
+      final receipt = Receipt(
+        id: 7,
+        productName: 'Mouse Pad',
+        category: Category.lainnya,
+        storeName: 'Gaming Shop',
+        purchaseDate: DateTime(2026, 4, 1),
+        warrantyMonths: 6,
+        warrantyDays: 5,
+        imagePath: '/img/pad.png',
+      );
+
+      final map = receipt.toSupabaseMap(includeDays: false);
+      expect(map.containsKey('warranty_days'), isFalse);
+    });
   });
 }

@@ -77,6 +77,26 @@ _Pesan ini dikirimkan otomatis oleh sistem SimpanNota langsung ke akun Telegram 
         .trim();
   }
 
+  /// Sensor ID Chat atau Token untuk pencatatan log yang aman (redaction)
+  static String maskSensitiveData(String data) {
+    if (data.length <= 4) return '****';
+    return '${data.substring(0, 2)}***${data.substring(data.length - 2)}';
+  }
+
+  /// Menguji konektivitas bot ke Telegram Chat ID pengguna (Issue 3)
+  static Future<TelegramSendResult> testBotConnection({
+    required String chatId,
+    String? botToken,
+  }) async {
+    return sendAutomatedMessage(
+      chatId: chatId,
+      message: '🔄 *Tes Koneksi Bot SimpanNota Berhasil!*\n\n'
+          'Akun Telegram Anda telah berhasil terhubung dengan aplikasi SimpanNota. '
+          'Anda akan menerima pengingat otomatis saat masa garansi barang Anda mendekati batas waktu.',
+      botToken: botToken,
+    );
+  }
+
   /// Mengirim pesan secara otomatis melalui Telegram Bot API
   static Future<TelegramSendResult> sendAutomatedMessage({
     required String chatId,

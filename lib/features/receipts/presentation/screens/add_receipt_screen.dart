@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/app_logger.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/utils/file_upload_validator.dart';
 import '../../domain/category.dart';
 import '../../domain/receipt.dart';
 import '../controllers/add_receipt_notifier.dart';
@@ -143,6 +145,29 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       if (!mounted) return;
 
       if (pickedFile != null) {
+        final validation = FileUploadValidator.validateFilePath(pickedFile.path);
+        if (!validation.isValid) {
+          setState(() {
+            _isProcessingImage = false;
+          });
+          AppLogger.warning('UPLOAD', 'Validasi file nota gagal: ${validation.errorMessage}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(validation.errorMessage ?? 'Berkas tidak valid.')),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          return;
+        }
+
         setState(() {
           _imagePath = pickedFile.path;
           _isProcessingImage = false;
@@ -226,6 +251,29 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
       if (!mounted) return;
 
       if (pickedFile != null) {
+        final validation = FileUploadValidator.validateFilePath(pickedFile.path);
+        if (!validation.isValid) {
+          setState(() {
+            _isProcessingWarrantyCard = false;
+          });
+          AppLogger.warning('UPLOAD', 'Validasi file kartu garansi gagal: ${validation.errorMessage}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(validation.errorMessage ?? 'Berkas tidak valid.')),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          return;
+        }
+
         setState(() {
           _warrantyCardPath = pickedFile.path;
           _isProcessingWarrantyCard = false;

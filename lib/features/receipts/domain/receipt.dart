@@ -24,23 +24,35 @@ class Receipt {
     this.warrantyCardPath,
   });
 
-  /// Menghitung tanggal kedaluwarsa secara presisi berdasarkan kombinasi bulan dan hari
+  /// Menghitung tanggal kedaluwarsa secara presisi berdasarkan kombinasi bulan dan hari.
+  /// Dinormalisasi ke tanggal kalender (date-only) untuk mencegah pergeseran zona waktu/jam.
   DateTime get expirationDate {
-    final withMonths = DateTime(
+    final base = DateTime(
       purchaseDate.year,
       purchaseDate.month + warrantyMonths,
       purchaseDate.day,
-      purchaseDate.hour,
-      purchaseDate.minute,
     );
-    return withMonths.add(Duration(days: warrantyDays));
+    return base.add(Duration(days: warrantyDays));
+  }
+
+  /// Sisa hari garansi yang dihitung secara presisi berdasarkan tanggal kalender lokal (date-only)
+  int get remainingDays {
+    return remainingDaysAsOf(DateTime.now());
+  }
+
+  /// Sisa hari garansi relatif terhadap tanggal acuan tertentu
+  int remainingDaysAsOf(DateTime referenceDate) {
+    final expDateOnly = normalizeDate(expirationDate);
+    final refDateOnly = normalizeDate(referenceDate);
+    return expDateOnly.difference(refDateOnly).inDays;
   }
 
   /// Status garansi dihitung dari tanggal kedaluwarsa presisi
-  WarrantyStatus get status {
-    final now = DateTime.now();
-    final daysLeft = expirationDate.difference(now).inDays;
+  WarrantyStatus get status => statusAsOf(DateTime.now());
 
+  /// Status garansi relatif terhadap tanggal acuan tertentu
+  WarrantyStatus statusAsOf(DateTime referenceDate) {
+    final daysLeft = remainingDaysAsOf(referenceDate);
     if (daysLeft < 0) {
       return WarrantyStatus.expired;
     } else if (daysLeft <= 30) {
@@ -48,6 +60,11 @@ class Receipt {
     } else {
       return WarrantyStatus.active;
     }
+  }
+
+  /// Helper untuk normalisasi tanggal ke date-only (00:00:00) lokal
+  static DateTime normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
   /// Menghasilkan label teks durasi garansi yang rapi (contoh: '1 Bulan 15 Hari' atau '15 Hari' atau '12 Bulan')

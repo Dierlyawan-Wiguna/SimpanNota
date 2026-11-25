@@ -82,21 +82,73 @@ void main() {
       );
     });
 
-    test('4. validateTelegramChatId: memvalidasi Telegram Chat ID (opsional, hanya angka)', () {
+    test('4. validateTelegramChatId: memvalidasi Telegram Chat ID (opsional, positif & negatif)', () {
       // Kasus kosong / null (opsional) -> harus valid (null)
       expect(ProfileValidator.validateTelegramChatId(null), isNull);
       expect(ProfileValidator.validateTelegramChatId(''), isNull);
       expect(ProfileValidator.validateTelegramChatId('   '), isNull);
 
-      // Kasus valid (hanya angka)
+      // Kasus valid: ID pengguna pribadi (angka positif)
       expect(ProfileValidator.validateTelegramChatId('123456789'), isNull);
       expect(ProfileValidator.validateTelegramChatId('9876543210'), isNull);
+      expect(ProfileValidator.validateTelegramChatId('  12345678  '), isNull);
+
+      // Kasus valid: ID Supergroup/Channel Telegram (angka negatif, misal: -100...)
+      expect(ProfileValidator.validateTelegramChatId('-1001234567890'), isNull);
+      expect(ProfileValidator.validateTelegramChatId('-987654321'), isNull);
+
+      // Kasus input @username (bukan numeric ID)
+      expect(
+        ProfileValidator.validateTelegramChatId('@username'),
+        contains('bukan username (@)'),
+      );
+      expect(
+        ProfileValidator.validateTelegramChatId('@my_tele_bot'),
+        contains('bukan username (@)'),
+      );
 
       // Kasus non-angka (huruf, simbol, atau kombinasi)
-      expect(ProfileValidator.validateTelegramChatId('abc'), 'Telegram Chat ID hanya boleh berupa angka.');
-      expect(ProfileValidator.validateTelegramChatId('123a456'), 'Telegram Chat ID hanya boleh berupa angka.');
-      expect(ProfileValidator.validateTelegramChatId('@username'), 'Telegram Chat ID hanya boleh berupa angka.');
-      expect(ProfileValidator.validateTelegramChatId('123-456'), 'Telegram Chat ID hanya boleh berupa angka.');
+      expect(
+        ProfileValidator.validateTelegramChatId('abc'),
+        'Telegram Chat ID hanya boleh berupa angka.',
+      );
+      expect(
+        ProfileValidator.validateTelegramChatId('123a456'),
+        'Telegram Chat ID hanya boleh berupa angka.',
+      );
+      expect(
+        ProfileValidator.validateTelegramChatId('123-456'),
+        'Telegram Chat ID hanya boleh berupa angka.',
+      );
+    });
+
+    test('5. sanitizeTelegramChatId: membersihkan spasi dan null safety', () {
+      expect(ProfileValidator.sanitizeTelegramChatId(null), '');
+      expect(ProfileValidator.sanitizeTelegramChatId('   '), '');
+      expect(ProfileValidator.sanitizeTelegramChatId('  123456789  '), '123456789');
+      expect(ProfileValidator.sanitizeTelegramChatId('-1001234567890'), '-1001234567890');
+    });
+
+    test('6. validateDisplayName: batas ekstrem karakter', () {
+      expect(ProfileValidator.validateDisplayName(' '), 'Nama pengguna tidak boleh kosong.');
+      expect(ProfileValidator.validateDisplayName('A'), 'Nama pengguna minimal 2 karakter.');
+      expect(ProfileValidator.validateDisplayName('Ab'), isNull);
+      expect(ProfileValidator.validateDisplayName('Budi Santoso 123'), isNull);
+    });
+
+    test('7. validatePasswordChange: batas kata sandi pendek dan persis', () {
+      expect(
+        ProfileValidator.validatePasswordChange(newPassword: '', confirmPassword: ''),
+        'Kata sandi minimal 6 karakter.',
+      );
+      expect(
+        ProfileValidator.validatePasswordChange(newPassword: '12345', confirmPassword: '12345'),
+        'Kata sandi minimal 6 karakter.',
+      );
+      expect(
+        ProfileValidator.validatePasswordChange(newPassword: 'abcdef', confirmPassword: 'abcdef'),
+        isNull,
+      );
     });
   });
 }

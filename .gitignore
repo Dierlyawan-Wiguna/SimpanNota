@@ -1,4 +1,6 @@
 # Miscellaneous
+*.apk
+app-release.apk
 *.class
 *.lock
 *.log

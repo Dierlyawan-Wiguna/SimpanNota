@@ -41,15 +41,28 @@ class ProfileValidator {
     return InputValidator.formatIndonesianPhone(rawPhone);
   }
 
+  /// Membersihkan input Telegram Chat ID dari spasi ekstra
+  static String sanitizeTelegramChatId(String? value) {
+    if (value == null) return '';
+    return value.trim();
+  }
+
   /// Validasi Telegram Chat ID.
-  /// Opsional (boleh kosong atau null), namun jika diisi wajib berupa angka saja (numeric ID).
+  /// Opsional (boleh kosong atau null).
+  /// Mendukung ID numerik positif (chat pribadi) dan negatif (grup/supergroup/channel).
   static String? validateTelegramChatId(String? value) {
     if (value == null || value.trim().isEmpty) {
       return null;
     }
     final clean = value.trim();
-    final numericRegex = RegExp(r'^[0-9]+$');
-    if (!numericRegex.hasMatch(clean)) {
+
+    if (clean.startsWith('@')) {
+      return 'Telegram Chat ID harus berupa angka ID (misal: 12345678 atau -100...), bukan username (@).';
+    }
+
+    // Mendukung ID pribadi (misal: 123456789) atau ID grup/supergroup (misal: -1001234567890)
+    final telegramIdRegex = RegExp(r'^-?[0-9]{5,16}$');
+    if (!telegramIdRegex.hasMatch(clean)) {
       return 'Telegram Chat ID hanya boleh berupa angka.';
     }
     return null;
